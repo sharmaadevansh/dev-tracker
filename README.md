@@ -1,53 +1,328 @@
-# DevTrack.AI
+# 🚀 DevTrack.AI
 
-Unified developer portfolio dashboard. Current scope: **GitHub, LeetCode, Codeforces, CodeChef, GeeksforGeeks, LinkedIn**, plus a local Project Tracker.
+> A unified developer portfolio dashboard that aggregates coding profiles, GitHub activity, and personal projects into a single modern interface.
 
-## Flow
+![React](https://img.shields.io/badge/React-19-blue?logo=react)
+![Vite](https://img.shields.io/badge/Vite-Frontend-purple?logo=vite)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Active-success)
 
-1. **Login** (`/login`) — hardcoded credentials for now (no backend yet).
-   - Username: `devansh`
-   - Password: `devtrack2026`
-   - Change these in `src/context/AuthContext.jsx` → `HARDCODED_USER`.
-2. **Handle setup** (`/setup`) — enter your GitHub, LeetCode, Codeforces, CodeChef, GFG usernames and LinkedIn handle/URL once. Stored in `localStorage`, so it persists across sessions (skip any field you don't have).
-3. **Dashboard** (`/dashboard`) — auto-fetches and renders live stats for every linked platform.
-   - `/dashboard/repos` — searchable/filterable GitHub repo explorer.
-   - `/dashboard/projects` — a project tracker (CRUD: name, description, status, tech stack, links, dates, priority), stored locally in `localStorage`.
+---
 
-## Run it
+## 📌 Overview
+
+**DevTrack.AI** is a developer dashboard designed to eliminate the need to visit multiple coding platforms separately.
+
+It consolidates your:
+
+- 🐙 GitHub profile & repositories
+- 🧩 LeetCode statistics
+- ⚔️ Codeforces profile
+- 🍜 CodeChef profile
+- 📚 GeeksforGeeks profile
+- 💼 LinkedIn profile
+- 📂 Personal Project Tracker
+
+into one clean and responsive dashboard.
+
+---
+
+# ✨ Features
+
+### 🔐 Authentication
+
+- Login screen
+- Protected routes
+- Session persistence using Local Storage
+- Easily replaceable with JWT authentication in future
+
+---
+
+### 👤 One-Time Profile Setup
+
+Configure your coding handles once.
+
+Supported platforms:
+
+- GitHub
+- LeetCode
+- Codeforces
+- CodeChef
+- GeeksforGeeks
+- LinkedIn
+
+The information is stored locally and automatically loaded on future visits.
+
+---
+
+### 📊 Developer Dashboard
+
+A centralized dashboard displaying live statistics from multiple platforms.
+
+Current integrations include:
+
+- GitHub
+- LeetCode
+- Codeforces
+- CodeChef
+- GeeksforGeeks
+- LinkedIn
+
+---
+
+### 🐙 GitHub Repository Explorer
+
+- Repository Search
+- Language Filter
+- Sort repositories
+- Repository cards
+- Stars
+- Forks
+- Open repository directly
+
+---
+
+### 📁 Project Tracker
+
+A lightweight project management tool.
+
+Features include:
+
+- Create Project
+- Edit Project
+- Delete Project
+- Track Status
+- Priority Management
+- Technology Stack
+- GitHub Link
+- Live Demo Link
+- Start Date
+- Deadline
+
+Currently powered by Local Storage.
+
+---
+
+# 🛠️ Tech Stack
+
+### Frontend
+
+- React
+- Vite
+- React Router
+- Context API
+- CSS
+
+### APIs
+
+| Platform | Source |
+|-----------|--------|
+| GitHub | Official REST API |
+| LeetCode | Community API |
+| Codeforces | Official API |
+| CodeChef | Community API |
+| GeeksforGeeks | Community API |
+
+---
+
+# 📂 Folder Structure
+
+```text
+src
+│
+├── assets
+├── components
+├── constants
+├── context
+├── hooks
+├── layouts
+├── pages
+├── services
+│   └── api
+├── utils
+└── App.jsx
+```
+
+---
+
+# 🚀 Getting Started
+
+Clone the repository
+
+```bash
+git clone https://github.com/sharmaadevansh/dev-tracker.git
+```
+
+Move inside the project
+
+```bash
+cd dev-tracker
+```
+
+Install dependencies
 
 ```bash
 npm install
+```
+
+Start development server
+
+```bash
 npm run dev
 ```
 
-Build for production:
+Build production
 
 ```bash
 npm run build
+```
+
+Preview production build
+
+```bash
 npm run preview
 ```
 
-## Data sources
+---
 
-| Platform | API used | Notes |
-|---|---|---|
-| GitHub | `api.github.com` (official, public, unauthenticated) + `github-contributions-api.jogruber.de` for the contribution calendar | Unauthenticated GitHub REST calls are rate-limited to 60 req/hr per IP. For heavier use, add a personal access token and send it as a Bearer header in `src/services/api/github.js`. |
-| LeetCode | `alfa-leetcode-api.onrender.com` (community wrapper around LeetCode's GraphQL API) | LeetCode has no official public API. This is a free, third-party-hosted mirror — it can go down or rate-limit. If that happens, self-host the [same project](https://github.com/alfaarghya/alfa-leetcode-api) and swap `LC_API` in `src/services/api/leetcode.js`. |
-| Codeforces | `codeforces.com/api` (official, public, unauthenticated) | Solid and well-documented. `user.status` is used to count unique accepted problems, which can be slow for accounts with huge submission histories. |
-| CodeChef | `codechef-api.vercel.app` (community wrapper) | No official public API. Same caveat as LeetCode/GFG — swap `CC_API` in `src/services/api/codechef.js` if it goes down. |
-| GeeksforGeeks | `geeks-for-geeks-api.vercel.app` (community wrapper) | Same caveat as LeetCode — no official API exists. Swap `GFG_API` in `src/services/api/gfg.js` if it's unavailable. |
-| LinkedIn | None (by design) | LinkedIn has no public, ToS-compliant API for reading arbitrary profiles, and scraping violates their terms. LinkedIn is handled as a manually-linked profile card only (`src/services/api/linkedin.js`). |
+# 🔑 Demo Credentials
 
-## Project Tracker
+```
+Username : devansh
+Password : devtrack2026
+```
 
-`/dashboard/projects` is fully client-side CRUD (create, edit, delete) backed by `localStorage` — no API involved. Fields match the original brief: name, description, status, tech stack, GitHub link, live link, start date, deadline, priority.
+These credentials can be modified inside:
 
-## Where to plug in the rest later
+```
+src/context/AuthContext.jsx
+```
 
-The folder structure already matches the full spec (`context/`, `services/api/`, `hooks/`, `constants/`) — adding Codeforces, CodeChef, HackerRank, the project tracker, learning tracker, notes, etc. is a matter of adding new service files under `src/services/api/` and new sections in `src/pages/`.
+---
 
-The real backend (Node/Express/MongoDB/JWT/cron sync) described in the original brief isn't built yet — this is the frontend-only phase, using each platform's public data live from the browser.
+# 🌐 API Information
 
-## Design system
+### GitHub
 
-Dark "chassis" theme — Void Black background, Gunmetal surfaces, Signal Red accent, Space Grotesk for display type, Inter for body, JetBrains Mono for data/terminal touches. Tokens live in `src/index.css` under `@theme`.
+Uses the official GitHub REST API.
+
+> Note:
+> Unauthenticated requests are limited to **60 requests/hour**.
+
+For higher limits, add a GitHub Personal Access Token.
+
+---
+
+### LeetCode
+
+Uses a community-maintained wrapper around the official GraphQL API.
+
+---
+
+### Codeforces
+
+Uses the official public Codeforces API.
+
+---
+
+### CodeChef
+
+Uses a community-maintained API.
+
+---
+
+### GeeksforGeeks
+
+Uses a community-maintained API.
+
+---
+
+### LinkedIn
+
+LinkedIn does not provide a public API for reading arbitrary profiles.
+
+Therefore, DevTrack.AI stores only your profile link and displays it inside the dashboard.
+
+---
+
+# 🎨 Design System
+
+The UI follows a modern developer aesthetic.
+
+### Colors
+
+- Void Black
+- Gunmetal
+- Signal Red
+
+### Typography
+
+- Space Grotesk
+- Inter
+- JetBrains Mono
+
+---
+
+# 🔮 Roadmap
+
+Upcoming features include:
+
+- JWT Authentication
+- Node.js Backend
+- MongoDB Database
+- User Accounts
+- Cloud Sync
+- HackerRank Integration
+- Coding Contest Calendar
+- Learning Tracker
+- Notes Section
+- Resume Generator
+- Analytics Dashboard
+- Dark/Light Theme
+- GitHub Contribution Heatmap
+- Weekly Progress Reports
+- Notifications
+
+---
+
+# 🤝 Contributing
+
+Contributions are always welcome.
+
+1. Fork the repository
+
+2. Create a new branch
+
+```bash
+git checkout -b feature-name
+```
+
+3. Commit your changes
+
+```bash
+git commit -m "Added feature"
+```
+
+4. Push
+
+```bash
+git push origin feature-name
+```
+
+5. Open a Pull Request
+
+---
+
+# 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+# ⭐ Support
+
+If you found this project helpful,
+
+**Give it a ⭐ on GitHub.**
+
+It helps the project reach more developers and motivates future improvements.
