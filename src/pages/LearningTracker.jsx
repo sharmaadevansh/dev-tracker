@@ -217,7 +217,6 @@ export default function LearningTracker() {
     <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-widest text-signal font-mono mb-1">syllabus // logs</p>
           <h1 className="font-display text-2xl font-semibold text-chrome">Learning Tracker</h1>
         </div>
         

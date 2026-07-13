@@ -8,7 +8,7 @@ function CountUp({ value }) {
   useEffect(() => {
     const controls = animate(count, Number(value) || 0, { duration: 1.1, ease: 'easeOut' })
     return controls.stop
-  }, [value])
+  }, [value, count])
 
   return <motion.span>{rounded}</motion.span>
 }
@@ -20,13 +20,9 @@ export default function StatCard({ icon: Icon, label, value, suffix = '', accent
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
       whileHover={{ 
-        y: -3, 
-        borderColor: accent ? 'var(--color-violet)' : 'var(--color-signal)',
-        boxShadow: '0 0 28px rgba(0, 0, 0, 0.42)'
+        y: -4
       }}
-      className={`glass rounded-[32px] p-6 flex flex-col gap-4 relative overflow-hidden group transition-all duration-300 ${
-        accent ? 'border-violet/30 bg-gunmetal/40 shadow-[0_0_12px_rgba(0,0,0,0.12)]' : 'border-hairline bg-gunmetal/20'
-      }`}
+      className="glass p-6 flex flex-col gap-4 relative overflow-hidden group transition-all duration-300 cursor-pointer"
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-widest text-chrome-dim font-bold font-mono">{label}</span>

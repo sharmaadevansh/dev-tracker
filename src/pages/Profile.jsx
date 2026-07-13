@@ -45,7 +45,6 @@ export default function Profile() {
   return (
     <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin flex flex-col h-full">
       <div>
-        <p className="text-[11px] uppercase tracking-widest text-signal font-mono mb-1">security // configuration</p>
         <h1 className="font-display text-2xl font-semibold text-chrome">Client Profile</h1>
       </div>
 

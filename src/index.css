@@ -1,23 +1,23 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Forum&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Forum&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&family=Caveat:wght@400;700&display=swap');
 
 @theme {
-  --color-void: #f6f6f0; /* Soft off-white background */
+  --color-void: #f7f9fa; /* Sleek cool off-white background */
   --color-gunmetal: #ffffff; /* White elevated surfaces */
-  --color-steel: #f7f7f3; /* Soft white inner control surfaces */
-  --color-hairline: #dadad4; /* Card & sidebar borders */
-  --color-chrome: #181818; /* Black primary text */
-  --color-chrome-dim: #6f6f6b; /* Muted gray text */
-  --color-signal: #baff2b; /* Lime primary accent */
-  --color-signal-dim: #719f22; /* Dark lime text */
-  --color-violet: #d9ff8f; /* Soft lime secondary accent */
-  --color-violet-dim: #8caf48; /* Muted lime secondary text */
-  --color-yellow: #efffbf; /* Pale lime tertiary accent */
-  --color-yellow-dim: #a8bf65; /* Muted pale lime text */
+  --color-steel: #f0f2f5; /* Soft light gray control surfaces */
+  --color-hairline: rgba(0, 0, 0, 0.06); /* Soft subtle hairline borders */
+  --color-chrome: #0d1117; /* Slate black primary text */
+  --color-chrome-dim: #57606a; /* Muted gray text */
+  --color-signal: #b8f22f; /* Bright lime accent */
+  --color-signal-dim: #3e5a00; /* Dark green for text contrast */
+  --color-violet: #8c63ff; /* Sleek violet/purple accent */
+  --color-violet-dim: #3a2280; /* Dark violet/purple text */
+  --color-yellow: #ffd53d; /* Vivid yellow/orange accent */
+  --color-yellow-dim: #6b5300; /* Dark yellow text */
 
-  --font-display: "Goudy Old Style", Georgia, serif;
-  --font-body: "Goudy Old Style", Georgia, serif;
-  --font-mono: "Goudy Old Style", Georgia, serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 * {
@@ -87,6 +87,34 @@ body::after {
   position: relative;
   z-index: 1;
 }
+.app-frame > div {
+  border-radius: 40px !important;
+}
+
+/* Refine margins, paddings, and overall spacing layout */
+div[class*="px-12"][class*="py-10"] {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+@media (min-width: 768px) {
+  div[class*="px-12"][class*="py-10"] {
+    padding-left: 2.5rem !important;
+    padding-right: 2.5rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.5rem !important;
+}
+
+.space-y-12 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 2.25rem !important;
+}
 
 ::selection {
   background: var(--color-signal);
@@ -109,11 +137,85 @@ body::after {
 }
 
 .glass {
-  background: color-mix(in srgb, var(--color-gunmetal) 86%, transparent);
-  backdrop-filter: blur(18px) saturate(104%);
-  border: 1px solid color-mix(in srgb, var(--color-hairline) 88%, transparent);
-  border-radius: 36px; /* Expanded circle-oval border radius */
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.44);
+  background: var(--color-gunmetal);
+  border: 1px solid var(--color-hairline) !important;
+  border-radius: 36px !important; /* Extremely rounded/circular corners */
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.06), 0 0 50px -5px rgba(186, 255, 43, 0.08) !important; /* Soft lime glow */
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.glass:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.08), 0 0 55px -5px rgba(186, 255, 43, 0.12) !important;
+}
+
+/* Highly curved/circular border utilities */
+.border,
+.border-b,
+.border-t,
+.border-l,
+.border-r {
+  border-width: 1px !important;
+  border-color: var(--color-hairline) !important;
+}
+
+/* Default form elements styling (overridable by classes) */
+input, select {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--color-steel);
+  color: var(--color-chrome);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.04);
+  border-radius: 9999px; /* Pill shaped default */
+  padding: 12px 22px;
+  transition: all 0.25s ease;
+}
+
+textarea {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--color-steel);
+  color: var(--color-chrome);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.04);
+  border-radius: 20px; /* Box shaped default */
+  padding: 12px 22px;
+  transition: all 0.25s ease;
+}
+
+/* Ensure clean transparent inputs and textareas remain transparent, borderless, and shadowless */
+input.bg-transparent, textarea.bg-transparent {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-violet);
+  box-shadow: 0 0 0 3px rgba(140, 99, 255, 0.15);
+  outline: none;
+}
+
+/* Button & NavLink organic button styling with soft shadow translation */
+button,
+.button,
+a.rounded-full[class*="bg-gradient-to-r"] {
+  border: none !important;
+  border-radius: 9999px !important; /* Circular pills */
+  box-shadow: 0 10px 25px -5px rgba(140, 99, 255, 0.2) !important;
+  font-weight: 600 !important;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+button:hover,
+.button:hover,
+a.rounded-full[class*="bg-gradient-to-r"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 15px 30px -5px rgba(140, 99, 255, 0.3) !important;
+}
+
+button:active,
+.button:active,
+a.rounded-full[class*="bg-gradient-to-r"]:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 5px 15px -3px rgba(140, 99, 255, 0.15) !important;
 }
 
 .scanline {

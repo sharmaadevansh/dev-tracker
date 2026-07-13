@@ -128,7 +128,7 @@ export default function Dashboard() {
           className="absolute md:top-[8%] md:left-[45%] w-24 h-24 rounded-full glass border border-yellow/40 hover:border-yellow shadow-[0_0_18px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(0,0,0,0.44)] transition-all duration-300 flex flex-col items-center justify-center p-3 text-center cursor-pointer group z-10"
         >
           <Code2 size={20} className="text-yellow group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold text-chrome font-mono mt-1">LeetCode</span>
+          <span style={{ fontFamily: "'Caveat', cursive" }} className="text-[14px] font-bold text-chrome mt-0.5 leading-none">LeetCode</span>
           <span className="text-[8px] text-chrome-dim font-mono leading-none mt-0.5">
             {leetcode.isLoading ? '...' : `${leetcode.data?.solved?.totalSolved || 0} Solved`}
           </span>
@@ -145,7 +145,7 @@ export default function Dashboard() {
           className="absolute md:top-[20%] md:left-[15%] w-26 h-26 rounded-full glass border border-signal/40 hover:border-signal shadow-[0_0_18px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(0,0,0,0.44)] transition-all duration-300 flex flex-col items-center justify-center p-3 text-center cursor-pointer group z-10"
         >
           <GithubIcon size={22} className="text-signal group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold text-chrome font-mono mt-1">GitHub</span>
+          <span style={{ fontFamily: "'Caveat', cursive" }} className="text-[14px] font-bold text-chrome mt-0.5 leading-none">GitHub</span>
           <span className="text-[8px] text-chrome-dim font-mono leading-none mt-0.5">
             {github.isLoading ? '...' : `${github.data?.profile?.publicRepos || 0} Repos`}
           </span>
@@ -162,7 +162,7 @@ export default function Dashboard() {
           className="absolute md:top-[20%] md:right-[15%] w-24 h-24 rounded-full glass border border-violet/40 hover:border-violet shadow-[0_0_18px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(0,0,0,0.44)] transition-all duration-300 flex flex-col items-center justify-center p-3 text-center cursor-pointer group z-10"
         >
           <LinkedinIcon size={20} className="text-violet group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold text-chrome font-mono mt-1">LinkedIn</span>
+          <span style={{ fontFamily: "'Caveat', cursive" }} className="text-[14px] font-bold text-chrome mt-0.5 leading-none">LinkedIn</span>
           <span className="text-[8px] text-chrome-dim font-mono leading-none mt-0.5">View Profile</span>
           <ExternalLink size={8} className="text-chrome-dim/40 absolute bottom-2 group-hover:text-violet transition-colors" />
         </motion.a>
@@ -177,7 +177,7 @@ export default function Dashboard() {
           className="absolute md:bottom-[15%] md:left-[12%] w-24 h-24 rounded-full glass border border-violet/40 hover:border-violet shadow-[0_0_18px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(0,0,0,0.44)] transition-all duration-300 flex flex-col items-center justify-center p-3 text-center cursor-pointer group z-10"
         >
           <Swords size={20} className="text-violet group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold text-chrome font-mono mt-1">Codeforces</span>
+          <span style={{ fontFamily: "'Caveat', cursive" }} className="text-[14px] font-bold text-chrome mt-0.5 leading-none">Codeforces</span>
           <span className="text-[8px] text-chrome-dim font-mono leading-none mt-0.5">
             {codeforces.isLoading ? '...' : `${codeforces.data?.profile?.rating || 'Unrated'} Rating`}
           </span>
@@ -192,7 +192,7 @@ export default function Dashboard() {
           transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut', delay: 1.4 }}
         >
           <Mail size={20} className="text-signal group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold text-chrome font-mono mt-1">Gmail</span>
+          <span style={{ fontFamily: "'Caveat', cursive" }} className="text-[14px] font-bold text-chrome mt-0.5 leading-none">Gmail</span>
           <span className="text-[8px] text-chrome-dim font-mono leading-none mt-0.5">Get in touch</span>
           <ExternalLink size={8} className="text-chrome-dim/40 absolute bottom-2 group-hover:text-signal transition-colors" />
         </motion.a>

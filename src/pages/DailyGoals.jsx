@@ -95,7 +95,6 @@ export default function DailyGoals() {
   return (
     <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin">
       <div className="mb-6">
-        <p className="text-[11px] uppercase tracking-widest text-signal font-mono mb-1">routine_compiler // scheduler</p>
         <h1 className="font-display text-2xl font-semibold text-chrome">Daily Goals</h1>
       </div>
 

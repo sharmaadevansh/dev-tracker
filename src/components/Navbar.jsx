@@ -9,6 +9,7 @@ const navItems = [
   { to: '/dashboard/analytics', label: 'Analytics' },
   { to: '/dashboard/repos', label: 'Repositories' },
   { to: '/dashboard/projects', label: 'Projects' },
+  { to: '/dashboard/learning', label: 'Learning' },
   { to: '/dashboard/goals', label: 'Daily Goals' },
   { to: '/dashboard/notes', label: 'Notes' },
   { to: '/dashboard/resume', label: 'Resume' },

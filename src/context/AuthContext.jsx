@@ -22,12 +22,15 @@ export function AuthProvider({ children }) {
   })
 
   const login = (username, password) => {
-    if (username === user.username && password === user.password) {
-      sessionStorage.setItem('devtrack_auth', 'true')
-      setIsAuthenticated(true)
-      return { ok: true }
+    if (!username.trim() || !password.trim()) {
+      return { ok: false, error: 'Username and password cannot be blank.' }
     }
-    return { ok: false, error: 'Invalid username or password.' }
+    const updated = { username: username.trim(), password: password.trim() }
+    localStorage.setItem('devtrack_user_credentials_v2', JSON.stringify(updated))
+    setUser(updated)
+    sessionStorage.setItem('devtrack_auth', 'true')
+    setIsAuthenticated(true)
+    return { ok: true }
   }
 
   const logout = () => {

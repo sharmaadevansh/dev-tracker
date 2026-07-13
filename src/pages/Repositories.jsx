@@ -125,7 +125,6 @@ export default function Repositories() {
   return (
     <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin">
       <div className="mb-6">
-        <p className="text-[11px] uppercase tracking-widest text-signal font-mono mb-1">github // file_index</p>
         <h1 className="font-display text-2xl font-semibold text-chrome">Repository Explorer</h1>
       </div>
 

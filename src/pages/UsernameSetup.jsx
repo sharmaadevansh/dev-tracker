@@ -68,9 +68,6 @@ export default function UsernameSetup() {
         className="w-full max-w-lg"
       >
         <div className="mb-6">
-          <p className="text-[11px] uppercase tracking-widest text-signal font-mono mb-2">
-            one-time setup
-          </p>
           <h1 className="font-display text-2xl font-semibold text-chrome">
             Link your platforms
           </h1>

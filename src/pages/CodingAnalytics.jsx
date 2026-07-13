@@ -82,7 +82,6 @@ export default function CodingAnalytics() {
       {/* Header section */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-widest text-signal font-mono mb-1">analytics_engine // platform_metrics</p>
           <h1 className="font-display text-2xl font-semibold text-chrome">Platform Analytics</h1>
         </div>
         {isSyncing && <InlineSpinner label="Compiling analytics" />}

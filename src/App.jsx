@@ -14,6 +14,7 @@ import Notes from './pages/Notes'
 import ResumeTracker from './pages/ResumeTracker'
 import DailyGoals from './pages/DailyGoals'
 import Profile from './pages/Profile'
+import LearningTracker from './pages/LearningTracker'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +62,7 @@ export default function App() {
                 <Route path="resume" element={<ResumeTracker />} />
                 <Route path="goals" element={<DailyGoals />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="learning" element={<LearningTracker />} />
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
