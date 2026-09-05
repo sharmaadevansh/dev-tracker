@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, Pin, Trash2, BookOpen, Edit2, Eye, FolderPlus, Tag } from 'lucide-react'
+import {
+  createCollectionItem,
+  deleteCollectionItem,
+  fetchCollection,
+  updateCollectionItem,
+} from '../services/api/backend'
 
 const STORAGE_KEY = 'devtrack_notes'
 
@@ -103,7 +110,7 @@ const emptyNote = () => ({
 })
 
 export default function Notes() {
-  const [notes, setNotes] = useState(loadNotes)
+  const queryClient = useQueryClient()
   const [activeId, setActiveId] = useState(null)
   const [search, setSearch] = useState('')
   const [folderFilter, setFolderFilter] = useState('all')
@@ -111,10 +118,31 @@ export default function Notes() {
   const [newFolderInput, setNewFolderInput] = useState('')
   const [showNewFolderModal, setShowNewFolderModal] = useState(false)
 
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes))
-  }, [notes])
+  const { data: remoteNotes } = useQuery({
+    queryKey: ['backend-notes'],
+    queryFn: () => fetchCollection('notes'),
+    initialData: loadNotes,
+  })
+
+  const notes = useMemo(() => remoteNotes || [], [remoteNotes])
+
+  const syncNotesCache = (nextNotes) => {
+    queryClient.setQueryData(['backend-notes'], nextNotes)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes))
+  }
+
+  const createMutation = useMutation({
+    mutationFn: (note) => createCollectionItem('notes', note),
+    onSuccess: (note) => syncNotesCache([note, ...notes]),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (note) => updateCollectionItem('notes', note.id, note),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteCollectionItem('notes', id),
+  })
 
   // Select first note on load if none active
   useEffect(() => {
@@ -137,23 +165,26 @@ export default function Notes() {
   // Create new note
   const handleCreateNote = () => {
     const note = emptyNote()
-    setNotes((prev) => [note, ...prev])
+    syncNotesCache([note, ...notes])
+    createMutation.mutate(note)
     setActiveId(note.id)
   }
 
   // Update active note details
   const updateActiveNote = (key, value) => {
-    setNotes((prev) =>
-      prev.map((n) =>
+    const nextNotes = notes.map((n) =>
         n.id === activeId ? { ...n, [key]: value, updatedAt: new Date().toISOString() } : n
-      )
     )
+    syncNotesCache(nextNotes)
+    const nextNote = nextNotes.find((n) => n.id === activeId)
+    if (nextNote) updateMutation.mutate(nextNote)
   }
 
   // Delete note
   const handleDeleteNote = (id, e) => {
     e.stopPropagation()
-    setNotes((prev) => prev.filter((n) => n.id !== id))
+    syncNotesCache(notes.filter((n) => n.id !== id))
+    deleteMutation.mutate(id)
     if (activeId === id) {
       setActiveId(notes.length > 1 ? notes.find((n) => n.id !== id).id : null)
     }

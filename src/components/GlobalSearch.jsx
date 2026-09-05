@@ -37,19 +37,23 @@ export default function GlobalSearch({ isOpen, onClose }) {
 
   // Fetch search items
   const searchItems = useMemo(() => {
-    // 1. Load Projects from localStorage
-    let projects = []
-    try {
-      const raw = localStorage.getItem('devtrack_projects')
-      if (raw) projects = JSON.parse(raw)
-    } catch {}
+    // 1. Load Projects from React Query's backend cache, with localStorage fallback.
+    let projects = queryClient.getQueryData(['backend-projects']) || []
+    if (!projects.length) {
+      try {
+        const raw = localStorage.getItem('devtrack_projects')
+        if (raw) projects = JSON.parse(raw)
+      } catch {}
+    }
 
-    // 2. Load Notes from localStorage
-    let notes = []
-    try {
-      const raw = localStorage.getItem('devtrack_notes')
-      if (raw) notes = JSON.parse(raw)
-    } catch {}
+    // 2. Load Notes from React Query's backend cache, with localStorage fallback.
+    let notes = queryClient.getQueryData(['backend-notes']) || []
+    if (!notes.length) {
+      try {
+        const raw = localStorage.getItem('devtrack_notes')
+        if (raw) notes = JSON.parse(raw)
+      } catch {}
+    }
 
     // 3. Load Repos from React Query cache
     const githubRepos = queryClient.getQueryData(['github-repos', handles.github]) || []

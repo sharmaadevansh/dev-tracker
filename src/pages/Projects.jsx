@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ExternalLink, X } from 'lucide-react'
 import Heatmap from '../components/Heatmap'
+import {
+  createCollectionItem,
+  deleteCollectionItem,
+  fetchCollection,
+  updateCollectionItem,
+} from '../services/api/backend'
 
 const STORAGE_KEY = 'devtrack_projects'
 
@@ -40,14 +47,38 @@ function emptyProject() {
 }
 
 export default function Projects() {
-  const [projects, setProjects] = useState(loadProjects)
+  const queryClient = useQueryClient()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [draft, setDraft] = useState(emptyProject())
   const [editingId, setEditingId] = useState(null)
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
-  }, [projects])
+  const { data: remoteProjects, isLoading, isError } = useQuery({
+    queryKey: ['backend-projects'],
+    queryFn: () => fetchCollection('projects'),
+    initialData: loadProjects,
+  })
+
+  const projects = remoteProjects || []
+
+  const syncProjectsCache = (nextProjects) => {
+    queryClient.setQueryData(['backend-projects'], nextProjects)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects))
+  }
+
+  const createMutation = useMutation({
+    mutationFn: (project) => createCollectionItem('projects', project),
+    onSuccess: (project) => syncProjectsCache([project, ...projects]),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (project) => updateCollectionItem('projects', project.id, project),
+    onSuccess: (project) => syncProjectsCache(projects.map((p) => (p.id === project.id ? project : p))),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteCollectionItem('projects', id),
+    onSuccess: (_, id) => syncProjectsCache(projects.filter((p) => p.id !== id)),
+  })
 
   const openNew = () => {
     setDraft(emptyProject())
@@ -65,15 +96,15 @@ export default function Projects() {
     e.preventDefault()
     if (!draft.name.trim()) return
     if (editingId) {
-      setProjects((prev) => prev.map((p) => (p.id === editingId ? draft : p)))
+      updateMutation.mutate(draft)
     } else {
-      setProjects((prev) => [...prev, draft])
+      createMutation.mutate(draft)
     }
     setIsFormOpen(false)
   }
 
   const handleDelete = (id) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id))
+    deleteMutation.mutate(id)
   }
 
   const update = (key, value) => setDraft((d) => ({ ...d, [key]: value }))
@@ -83,6 +114,8 @@ export default function Projects() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-chrome">Projects</h1>
+          {isError && <p className="text-xs text-signal font-mono mt-1">Backend sync unavailable. Showing local cache.</p>}
+          {isLoading && <p className="text-xs text-chrome-dim font-mono mt-1">Loading projects from backend...</p>}
         </div>
         <button
           onClick={openNew}

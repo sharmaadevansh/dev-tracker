@@ -1,4 +1,10 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  AUTH_TOKEN_KEY,
+  fetchCurrentUser,
+  loginRequest,
+  updateCredentialsRequest,
+} from '../services/api/backend'
 
 const AuthContext = createContext(null)
 
@@ -9,47 +15,78 @@ const DEFAULT_USER = {
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => sessionStorage.getItem('devtrack_auth') === 'true'
+    () => !!sessionStorage.getItem(AUTH_TOKEN_KEY)
   )
 
-  const [user, setUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem('devtrack_user_credentials_v2')
-      return raw ? JSON.parse(raw) : DEFAULT_USER
-    } catch {
-      return DEFAULT_USER
-    }
-  })
+  const [user, setUser] = useState(DEFAULT_USER)
+  const [authReady, setAuthReady] = useState(false)
 
-  const login = (username, password) => {
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!sessionStorage.getItem(AUTH_TOKEN_KEY)) {
+        setAuthReady(true)
+        return
+      }
+
+      try {
+        const currentUser = await fetchCurrentUser()
+        setUser((prev) => ({ ...prev, username: currentUser.username }))
+        setIsAuthenticated(true)
+      } catch {
+        sessionStorage.removeItem(AUTH_TOKEN_KEY)
+        setIsAuthenticated(false)
+      } finally {
+        setAuthReady(true)
+      }
+    }
+
+    restoreSession()
+  }, [])
+
+  const login = async (username, password) => {
     if (!username.trim() || !password.trim()) {
       return { ok: false, error: 'Username and password cannot be blank.' }
     }
-    const updated = { username: username.trim(), password: password.trim() }
-    localStorage.setItem('devtrack_user_credentials_v2', JSON.stringify(updated))
-    setUser(updated)
-    sessionStorage.setItem('devtrack_auth', 'true')
-    setIsAuthenticated(true)
-    return { ok: true }
+
+    try {
+      const result = await loginRequest(username.trim(), password.trim())
+      sessionStorage.setItem(AUTH_TOKEN_KEY, result.token)
+      setUser({ username: result.user.username, password: password.trim() })
+      setIsAuthenticated(true)
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error.response?.data?.error || 'Backend login failed.',
+      }
+    }
   }
 
   const logout = () => {
-    sessionStorage.removeItem('devtrack_auth')
+    sessionStorage.removeItem(AUTH_TOKEN_KEY)
     setIsAuthenticated(false)
   }
 
-  const updateCredentials = (newUsername, newPassword) => {
+  const updateCredentials = async (newUsername, newPassword) => {
     if (!newUsername.trim() || !newPassword.trim()) {
       return { ok: false, error: 'Credentials cannot be blank.' }
     }
-    const updated = { username: newUsername.trim(), password: newPassword.trim() }
-    localStorage.setItem('devtrack_user_credentials_v2', JSON.stringify(updated))
-    setUser(updated)
-    return { ok: true }
+
+    try {
+      const result = await updateCredentialsRequest(newUsername.trim(), newPassword.trim())
+      sessionStorage.setItem(AUTH_TOKEN_KEY, result.token)
+      setUser({ username: result.user.username, password: newPassword.trim() })
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error.response?.data?.error || 'Unable to update credentials.',
+      }
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateCredentials }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, authReady, login, logout, updateCredentials }}>
       {children}
     </AuthContext.Provider>
   )

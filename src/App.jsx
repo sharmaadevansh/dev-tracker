@@ -45,14 +45,6 @@ export default function App() {
                     <DashboardLayout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout />
-                  </ProtectedRoute>
-                }
               >
                 <Route index element={<Dashboard />} />
                 <Route path="repos" element={<Repositories />} />

@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Upload, FileText, CheckCircle, AlertTriangle, ChevronRight, Award, Trash2, ShieldAlert } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Upload, FileText, CheckCircle, AlertTriangle, ChevronRight, Award, Trash2, Loader2, Sparkles } from 'lucide-react'
 
 const STORAGE_KEY = 'devtrack_resumes'
 
 const KEYWORDS_BY_ROLE = {
   'Frontend Engineer': {
     target: ['React', 'TypeScript', 'TailwindCSS', 'JavaScript', 'HTML5', 'CSS3', 'Next.js', 'Redux', 'Vite', 'Webpack'],
-    matched: ['React', 'JavaScript', 'HTML5', 'Vite'],
-    missing: ['TypeScript', 'TailwindCSS', 'Next.js', 'Redux'],
+    matched: ['React', 'JavaScript', 'HTML5', 'Vite', 'CSS3'],
+    missing: ['TypeScript', 'TailwindCSS', 'Next.js', 'Redux', 'Webpack'],
   },
   'Backend Engineer': {
     target: ['Node.js', 'Express', 'MongoDB', 'Redis', 'REST APIs', 'SQL', 'Docker', 'Kubernetes', 'gRPC', 'System Design', 'CI/CD'],
     matched: ['Node.js', 'Express', 'MongoDB', 'REST APIs', 'SQL'],
-    missing: ['Docker', 'Kubernetes', 'Redis', 'gRPC', 'System Design'],
+    missing: ['Docker', 'Kubernetes', 'Redis', 'gRPC', 'System Design', 'CI/CD'],
   },
   'Full Stack Engineer': {
     target: ['React', 'Node.js', 'Express', 'MongoDB', 'TypeScript', 'SQL', 'Docker', 'TailwindCSS', 'Git', 'System Design'],
@@ -70,6 +70,7 @@ export default function ResumeTracker() {
   const [resumes, setResumes] = useState(loadResumes)
   const [activeId, setActiveId] = useState(null)
   const [dragActive, setDragActive] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
   
   // Form fields
   const [versionLabel, setVersionLabel] = useState('')
@@ -98,45 +99,58 @@ export default function ResumeTracker() {
     }
   }
 
+  const handleFileSelect = (file) => {
+    if (!file) return
+    setSelectedFile(file)
+    if (!versionLabel) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ')
+      setVersionLabel(`v1.${resumes.length + 1}.0 - ${cleanName}`)
+    }
+  }
+
   const handleDrop = (e) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0])
+      handleFileSelect(e.dataTransfer.files[0])
     }
   }
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0])
+      handleFileSelect(e.target.files[0])
     }
   }
 
-  const handleUploadSubmit = (e) => {
+  const handleUploadSubmit = async (e) => {
     e.preventDefault()
-    if (!selectedFile || !versionLabel.trim()) return
+    if (!selectedFile) return
 
-    const roleData = KEYWORDS_BY_ROLE[targetRole]
-    // Generate a mock score based on keyword match percentage
-    const baseScore = Math.round((roleData.matched.length / roleData.target.length) * 50) + 40
-    // Introduce random minor variance
-    const score = Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 11) - 5))
+    setIsAnalyzing(true)
+
+    // Simulate scanning and ATS parsing
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    const roleData = KEYWORDS_BY_ROLE[targetRole] || KEYWORDS_BY_ROLE['Frontend Engineer']
+    const score = Math.floor(Math.random() * 16) + 78 // Score between 78 and 93
+    const finalTag = versionLabel.trim() || `v1.${resumes.length + 1}.0 - ${selectedFile.name.replace(/\.[^/.]+$/, '')}`
 
     const newResume = {
       id: crypto.randomUUID(),
       fileName: selectedFile.name,
-      versionLabel: versionLabel.trim(),
-      fileSize: `${Math.round(selectedFile.size / 1024)} KB`,
+      versionLabel: finalTag,
+      fileSize: `${Math.round(selectedFile.size / 1024) || 245} KB`,
       targetRole,
       atsScore: score,
       uploadedAt: new Date().toISOString(),
       matchedKeywords: roleData.matched,
       missingKeywords: roleData.missing,
       issues: [
-        'Ensure formatting details use standard sans-serif fonts like Inter or Arial.',
-        'Use past-tense verbs for past work, present-tense verbs for current work.',
-        `Include missing keywords to improve ATS scanning matches: ${roleData.missing.slice(0, 3).join(', ')}.`
+        `Ensure section headers match standard ATS format for ${targetRole} screening algorithms.`,
+        'Use strong action verbs (e.g. "engineered", "optimized", "architected") to describe bullet points.',
+        `Incorporate missing skills (${roleData.missing.slice(0, 3).join(', ')}) to increase ATS keyword density.`,
+        'Format contact section to explicitly feature GitHub & LinkedIn links.'
       ]
     }
 
@@ -144,6 +158,7 @@ export default function ResumeTracker() {
     setActiveId(newResume.id)
     setSelectedFile(null)
     setVersionLabel('')
+    setIsAnalyzing(false)
   }
 
   const handleDelete = (id, e) => {
@@ -174,42 +189,41 @@ export default function ResumeTracker() {
                 onDragOver={handleDrag}
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-5 text-center transition-colors relative flex flex-col items-center justify-center min-h-[140px] cursor-pointer ${
+                className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all relative flex flex-col items-center justify-center min-h-[140px] cursor-pointer ${
                   dragActive
-                    ? 'border-signal bg-signal/5'
+                    ? 'border-signal bg-signal/10 scale-[1.02]'
                     : selectedFile
-                    ? 'border-chrome/50 bg-steel/20'
-                    : 'border-hairline hover:border-chrome/30'
+                    ? 'border-signal/50 bg-signal/5'
+                    : 'border-hairline hover:border-chrome/40 hover:bg-steel/10'
                 }`}
               >
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.docx,.doc,.txt"
                   onChange={handleFileChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <Upload size={22} className={selectedFile ? 'text-signal mb-2' : 'text-chrome-dim mb-2'} />
+                <Upload size={24} className={selectedFile ? 'text-signal mb-2 led-pulse' : 'text-chrome-dim mb-2'} />
                 {selectedFile ? (
                   <div>
-                    <p className="text-xs text-chrome font-medium truncate max-w-[180px]">{selectedFile.name}</p>
-                    <p className="text-[10px] text-chrome-dim mt-0.5">{Math.round(selectedFile.size / 1024)} KB</p>
+                    <p className="text-xs text-chrome font-bold truncate max-w-[200px]">{selectedFile.name}</p>
+                    <p className="text-[10px] text-signal font-mono mt-0.5">{Math.round(selectedFile.size / 1024) || 245} KB • PDF Ready</p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs text-chrome">Drag resume PDF here</p>
-                    <p className="text-[10px] text-chrome-dim mt-0.5">or click to browse files</p>
+                    <p className="text-xs text-chrome font-semibold">Drag & drop any resume PDF here</p>
+                    <p className="text-[10px] text-chrome-dim mt-1 font-mono">or click to browse local files</p>
                   </div>
                 )}
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-chrome-dim uppercase tracking-wider font-mono">Version tag</label>
+                <label className="text-[10px] text-chrome-dim uppercase tracking-wider font-mono">Version tag (Optional)</label>
                 <input
                   value={versionLabel}
                   onChange={(e) => setVersionLabel(e.target.value)}
-                  placeholder="v1.2.0 - Added dynamic projects"
-                  required
-                  className="bg-void border border-hairline rounded-lg px-2.5 py-1.5 text-xs text-chrome outline-none focus:border-signal"
+                  placeholder={selectedFile ? `v1.${resumes.length + 1}.0 - ${selectedFile.name.replace(/\.[^/.]+$/, '')}` : 'v1.2.0 - Added dynamic projects'}
+                  className="bg-steel/60 border border-hairline rounded-full px-4 py-2 text-xs text-chrome outline-none focus:border-signal font-mono"
                 />
               </div>
 
@@ -218,7 +232,7 @@ export default function ResumeTracker() {
                 <select
                   value={targetRole}
                   onChange={(e) => setTargetRole(e.target.value)}
-                  className="bg-void border border-hairline rounded-lg px-2.5 py-1.5 text-xs text-chrome outline-none focus:border-signal"
+                  className="bg-steel/60 border border-hairline rounded-full px-4 py-2 text-xs text-chrome outline-none focus:border-signal font-mono"
                 >
                   <option>Frontend Engineer</option>
                   <option>Backend Engineer</option>
@@ -228,17 +242,27 @@ export default function ResumeTracker() {
 
               <button
                 type="submit"
-                disabled={!selectedFile || !versionLabel.trim()}
-                className="mt-2 flex items-center justify-center gap-2 bg-signal hover:bg-signal-dim disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white text-xs font-semibold py-2 rounded-lg cursor-pointer"
+                disabled={!selectedFile || isAnalyzing}
+                className="mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-signal to-violet hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-void font-bold text-xs uppercase tracking-wider py-3 rounded-full cursor-pointer shadow-[0_0_12px_rgba(0,0,0,0.2)]"
               >
-                Compile & Score Resume
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin text-void" />
+                    <span>Analyzing ATS Scan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={15} className="text-void" />
+                    <span>Compile & Score Resume</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
 
           {/* Versions List */}
           <div className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline flex-1 flex flex-col min-h-[220px]">
-            <h3 className="font-display font-semibold text-chrome text-xs mb-3">Version History</h3>
+            <h3 className="font-display font-semibold text-chrome text-xs mb-3">Version History ({resumes.length})</h3>
             <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 scrollbar-thin">
               {resumes.map((r) => (
                 <div
@@ -253,7 +277,7 @@ export default function ResumeTracker() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <FileText size={15} className={r.id === activeId ? 'text-signal' : 'text-chrome-dim'} />
                     <div className="min-w-0">
-                      <p className="text-xs text-chrome font-medium truncate max-w-[120px]">{r.versionLabel}</p>
+                      <p className="text-xs text-chrome font-medium truncate max-w-[130px]">{r.versionLabel}</p>
                       <p className="text-[10px] text-chrome-dim font-mono">{r.targetRole}</p>
                     </div>
                   </div>
@@ -265,7 +289,7 @@ export default function ResumeTracker() {
                     </span>
                     <button
                       onClick={(e) => handleDelete(r.id, e)}
-                      className="text-chrome-dim hover:text-signal transition-colors"
+                      className="text-chrome-dim hover:text-signal transition-colors cursor-pointer"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -282,7 +306,13 @@ export default function ResumeTracker() {
         {/* Right Side: ATS Score Assessment */}
         <div className="lg:col-span-2 flex flex-col gap-8">
           {activeResume ? (
-            <div className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline flex flex-col gap-6">
+            <motion.div
+              key={activeResume.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline flex flex-col gap-6"
+            >
               
               {/* Top Score Banner */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pb-6 border-b border-hairline/50">
@@ -330,7 +360,7 @@ export default function ResumeTracker() {
                   <div>
                     <h4 className="text-xs uppercase font-mono tracking-widest text-chrome font-bold flex items-center gap-1.5">
                       <Award size={13} className="text-signal" />
-                      Keyword Coverage
+                      KEYWORD COVERAGE
                     </h4>
                     <p className="text-[10px] text-chrome-dim mt-0.5">Analysis of job requirement keywords found in resume</p>
                   </div>
@@ -338,7 +368,7 @@ export default function ResumeTracker() {
                   <div className="flex flex-col gap-3">
                     {/* Found keywords */}
                     <div>
-                      <p className="text-[10px] text-chrome-dim uppercase tracking-wider font-mono font-bold mb-1.5 text-green-500">Found ({activeResume.matchedKeywords.length})</p>
+                      <p className="text-[10px] text-chrome-dim uppercase tracking-wider font-mono font-bold mb-1.5 text-green-500">FOUND ({activeResume.matchedKeywords.length})</p>
                       <div className="flex flex-wrap gap-1.5">
                         {activeResume.matchedKeywords.map((k) => (
                           <span key={k} className="text-[10px] font-mono bg-green-500/5 text-green-500 px-2 py-0.5 rounded border border-green-500/10">
@@ -350,7 +380,7 @@ export default function ResumeTracker() {
 
                     {/* Missing keywords */}
                     <div>
-                      <p className="text-[10px] text-chrome-dim uppercase tracking-wider font-mono font-bold mb-1.5 text-signal">Missing ({activeResume.missingKeywords.length})</p>
+                      <p className="text-[10px] text-chrome-dim uppercase tracking-wider font-mono font-bold mb-1.5 text-signal">MISSING ({activeResume.missingKeywords.length})</p>
                       <div className="flex flex-wrap gap-1.5">
                         {activeResume.missingKeywords.map((k) => (
                           <span key={k} className="text-[10px] font-mono bg-signal/5 text-signal px-2 py-0.5 rounded border border-signal-dim/10">
@@ -367,7 +397,7 @@ export default function ResumeTracker() {
                   <div>
                     <h4 className="text-xs uppercase font-mono tracking-widest text-chrome font-bold flex items-center gap-1.5">
                       <AlertTriangle size={13} className="text-signal" />
-                      Improvement Actions
+                      IMPROVEMENT ACTIONS
                     </h4>
                     <p className="text-[10px] text-chrome-dim mt-0.5">Actionable feedback for optimizing parsing accuracy</p>
                   </div>
@@ -383,12 +413,10 @@ export default function ResumeTracker() {
                 </div>
 
               </div>
-
-            </div>
+            </motion.div>
           ) : (
-            <div className="glass rounded-[36px] p-8 text-center flex flex-col items-center justify-center bg-gunmetal/30 border-hairline min-h-[300px]">
-              <ShieldAlert size={36} className="text-chrome-dim mb-3" />
-              <p className="text-xs text-chrome-dim">No resumes configured. Upload a PDF draft on the left to start screening.</p>
+            <div className="glass rounded-[36px] p-10 text-center bg-gunmetal/30 border-hairline">
+              <p className="text-chrome-dim text-sm">Select or upload a resume to view ATS scan feedback.</p>
             </div>
           )}
         </div>

@@ -171,6 +171,18 @@ Start development server
 npm run dev
 ```
 
+Start backend server
+
+```bash
+npm run dev:backend
+```
+
+Start frontend and backend together
+
+```bash
+npm run dev:full
+```
+
 Build production
 
 ```bash
@@ -201,6 +213,41 @@ src/context/AuthContext.jsx
 ---
 
 # 🌐 API Information
+
+## Local Backend
+
+DevTrack.AI includes a basic Express backend in:
+
+```text
+server/index.js
+```
+
+The backend runs on:
+
+```text
+http://localhost:5000
+```
+
+Available backend routes:
+
+| Method | Route | Purpose |
+|--------|-------|---------|
+| GET | /api/health | Check server status |
+| POST | /api/auth/login | Validate demo login credentials |
+| GET | /api/handles | Read saved platform handles |
+| PUT | /api/handles | Update platform handles |
+| GET | /api/projects | Read tracked projects |
+| POST | /api/projects | Create a project |
+| PUT | /api/projects/:id | Update a project |
+| DELETE | /api/projects/:id | Delete a project |
+
+For now, the backend stores data in a local JSON file:
+
+```text
+server/data/db.json
+```
+
+This keeps the project simple for demonstration. In a production version, this file-based storage can be replaced with MongoDB or PostgreSQL, and demo authentication can be replaced with JWT-based authentication.
 
 ### GitHub
 

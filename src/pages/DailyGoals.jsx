@@ -1,7 +1,14 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, Circle, Trash2, Calendar, Target, Flame, Plus } from 'lucide-react'
 import Heatmap from '../components/Heatmap'
+import {
+  createCollectionItem,
+  deleteCollectionItem,
+  fetchCollection,
+  updateCollectionItem,
+} from '../services/api/backend'
 
 const STORAGE_KEY = 'devtrack_goals'
 
@@ -46,14 +53,36 @@ function loadGoals() {
 }
 
 export default function DailyGoals() {
-  const [goals, setGoals] = useState(loadGoals)
+  const queryClient = useQueryClient()
   const [newGoalText, setNewGoalText] = useState('')
   const [newGoalCategory, setNewGoalCategory] = useState('Coding')
   const [streak, setStreak] = useState(4)
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(goals))
-  }, [goals])
+  const { data: remoteGoals } = useQuery({
+    queryKey: ['backend-goals'],
+    queryFn: () => fetchCollection('goals'),
+    initialData: loadGoals,
+  })
+
+  const goals = remoteGoals || []
+
+  const syncGoalsCache = (nextGoals) => {
+    queryClient.setQueryData(['backend-goals'], nextGoals)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextGoals))
+  }
+
+  const createMutation = useMutation({
+    mutationFn: (goal) => createCollectionItem('goals', goal),
+    onSuccess: (goal) => syncGoalsCache([goal, ...goals.filter((g) => g.id !== goal.id)]),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (goal) => updateCollectionItem('goals', goal.id, goal),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteCollectionItem('goals', id),
+  })
 
   const handleAddGoal = (e) => {
     e.preventDefault()
@@ -67,18 +96,21 @@ export default function DailyGoals() {
       createdAt: new Date().toISOString()
     }
 
-    setGoals((prev) => [...prev, goal])
+    syncGoalsCache([...goals, goal])
+    createMutation.mutate(goal)
     setNewGoalText('')
   }
 
   const toggleGoal = (id) => {
-    setGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g))
-    )
+    const nextGoals = goals.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g))
+    syncGoalsCache(nextGoals)
+    const nextGoal = nextGoals.find((g) => g.id === id)
+    if (nextGoal) updateMutation.mutate(nextGoal)
   }
 
   const handleDelete = (id) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id))
+    syncGoalsCache(goals.filter((g) => g.id !== id))
+    deleteMutation.mutate(id)
   }
 
   const totalCount = goals.length

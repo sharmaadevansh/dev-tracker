@@ -12,14 +12,14 @@ export default function Profile() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault()
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       setMessage('')
       return
     }
-    const result = updateCredentials(username, password)
+    const result = await updateCredentials(username, password)
     if (!result.ok) {
       setError(result.error)
       setMessage('')

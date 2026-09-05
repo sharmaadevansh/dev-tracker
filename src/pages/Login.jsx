@@ -107,15 +107,16 @@ export default function Login() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const result = login(username, password)
+    setError('')
+    setBooting(true)
+    const result = await login(username, password)
     if (!result.ok) {
+      setBooting(false)
       setError(result.error)
       return
     }
-    setError('')
-    setBooting(true)
     setTimeout(() => navigate('/setup'), 1200)
   }
 

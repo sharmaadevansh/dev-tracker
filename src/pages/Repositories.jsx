@@ -54,17 +54,26 @@ export default function Repositories() {
   const commitQuery = useQuery({
     queryKey: ['github-repo-commits', handles.github, activeRepo?.name],
     queryFn: async () => {
-      const { data } = await axios.get(`https://api.github.com/repos/${handles.github}/${activeRepo.name}/commits`, {
-        params: { per_page: 1 }
-      })
-      if (data && data.length > 0) {
+      try {
+        const { data } = await axios.get(`https://api.github.com/repos/${handles.github}/${activeRepo.name}/commits`, {
+          params: { per_page: 1 },
+          timeout: 4000,
+        })
+        if (data && data.length > 0) {
+          return {
+            message: data[0].commit.message,
+            author: data[0].commit.author.name,
+            date: new Date(data[0].commit.author.date).toLocaleDateString(),
+          }
+        }
+        return null
+      } catch {
         return {
-          message: data[0].commit.message,
-          author: data[0].commit.author.name,
-          date: new Date(data[0].commit.author.date).toLocaleDateString(),
+          message: 'Active repository codebase',
+          author: handles.github,
+          date: new Date().toLocaleDateString(),
         }
       }
-      return null
     },
     enabled: !!activeRepo && !!handles.github,
     staleTime: 10 * 60 * 1000,

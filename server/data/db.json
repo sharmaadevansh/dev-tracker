@@ -1,0 +1,423 @@
+{
+  "user": {
+    "username": "devansh",
+    "password": "devtrack2026"
+  },
+  "handles": {
+    "github": "sharmaadevansh",
+    "leetcode": "sharmaadevansh",
+    "codeforces": "toutsit",
+    "codechef": "toutsit",
+    "gfg": "sharmaadevansh",
+    "linkedin": "https://www.linkedin.com/in/sharmaadevansh/"
+  },
+  "activePlatforms": {
+    "github": true,
+    "leetcode": true,
+    "codeforces": true,
+    "codechef": true,
+    "gfg": true,
+    "linkedin": true
+  },
+  "projects": [
+    {
+      "id": "proj-1",
+      "name": "DevTrack AI - Portfolio & Analytics Hub",
+      "description": "Real-time multi-platform developer portfolio & competitive coding analytics system with automated proxy scraping, heatmaps, and ATS scoring.",
+      "status": "Completed",
+      "priority": "High",
+      "techStack": "React 19, Express, Vite, TailwindCSS, Recharts, TanStack Query",
+      "githubLink": "https://github.com/sharmaadevansh/dev-tracker",
+      "liveLink": "https://github.com/sharmaadevansh/dev-tracker",
+      "startDate": "2026-08-01",
+      "deadline": "2026-09-06",
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-09-05T18:00:00.000Z"
+    },
+    {
+      "id": "proj-2",
+      "name": "High-Throughput Rate Limiting Sidecar",
+      "description": "Distributed Token-Bucket & Leaky-Bucket rate limiter middleware in Go with Redis backstore supporting 100k+ ops/sec.",
+      "status": "In Progress",
+      "priority": "High",
+      "techStack": "Go, Redis, gRPC, Docker, Prometheus",
+      "githubLink": "https://github.com/sharmaadevansh",
+      "liveLink": "",
+      "startDate": "2026-08-15",
+      "deadline": "2026-09-20",
+      "createdAt": "2026-08-15T12:00:00.000Z",
+      "updatedAt": "2026-09-04T15:30:00.000Z"
+    },
+    {
+      "id": "proj-3",
+      "name": "RAG Knowledge Base & PDF Query Engine",
+      "description": "Vector indexing pipeline for embedding large technical documentation and answering context-aware engineering queries.",
+      "status": "In Progress",
+      "priority": "Medium",
+      "techStack": "Python, LangChain, Pinecone, FastAPI, OpenAI API",
+      "githubLink": "https://github.com/sharmaadevansh",
+      "liveLink": "",
+      "startDate": "2026-08-20",
+      "deadline": "2026-09-30",
+      "createdAt": "2026-08-20T14:00:00.000Z",
+      "updatedAt": "2026-09-03T11:20:00.000Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "note-1",
+      "title": "Graph Algorithms & Shortest Path Cheatsheet",
+      "content": "# Graph Algorithms Cheatsheet\n\nEssential algorithms for competitive coding rounds:\n\n## 1. Breadth-First Search (BFS)\n- **Time Complexity**: `O(V + E)`\n- **Space Complexity**: `O(V)`\n- **Use Case**: Shortest path in unweighted graphs.\n\n## 2. Dijkstra's Algorithm\n- **Time Complexity**: `O((V + E) log V)` using priority queue.\n- **Constraint**: Non-negative edge weights.\n\n> Note: For negative weights, use Bellman-Ford `O(VE)`.",
+      "folder": "DSA",
+      "tags": "graphs, dsa, algorithms, cheatsheet",
+      "pinned": true,
+      "createdAt": "2026-09-04T10:00:00.000Z",
+      "updatedAt": "2026-09-05T12:00:00.000Z"
+    },
+    {
+      "id": "note-2",
+      "title": "System Design: Distributed Cache & Eviction",
+      "content": "# Scaling Distributed Caches\n\nArchitecture principles for caching layers:\n\n## Eviction Policies\n1. **LRU**: Least Recently Used\n2. **LFU**: Least Frequently Used\n\n## Write Strategies\n- **Cache-Aside**: Application checks cache first; falls back to DB.\n- **Write-Through**: Updates written to cache and DB atomically.",
+      "folder": "System Design",
+      "tags": "caching, system-design, redis",
+      "pinned": true,
+      "createdAt": "2026-09-03T14:30:00.000Z",
+      "updatedAt": "2026-09-04T16:00:00.000Z"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal-1",
+      "text": "Solve 3 LeetCode Medium questions (Dynamic Programming & Graph Traversal)",
+      "category": "Coding",
+      "completed": true,
+      "createdAt": "2026-09-05T08:00:00.000Z"
+    },
+    {
+      "id": "goal-2",
+      "text": "Final presentation prep & live demonstration walkthrough run",
+      "category": "Projects",
+      "completed": true,
+      "createdAt": "2026-09-05T09:00:00.000Z"
+    },
+    {
+      "id": "goal-3",
+      "text": "Revise Virtual Memory, Paging & Banker's Algorithm",
+      "category": "Revision",
+      "completed": false,
+      "createdAt": "2026-09-05T10:00:00.000Z"
+    }
+  ],
+  "resumes": [
+    {
+      "id": "res-1",
+      "fileName": "Devansh_Sharma_Backend_Resume.pdf",
+      "versionLabel": "v1.2.0 - Node/Express & Systems Focused",
+      "fileSize": "342 KB",
+      "targetRole": "Backend Engineer",
+      "atsScore": 88,
+      "uploadedAt": "2026-09-04T12:00:00.000Z",
+      "matchedKeywords": [
+        "Node.js",
+        "Express",
+        "MongoDB",
+        "REST APIs",
+        "SQL"
+      ],
+      "missingKeywords": [
+        "Docker",
+        "Kubernetes",
+        "Redis",
+        "gRPC",
+        "System Design"
+      ],
+      "issues": [
+        "Include quantifiable metrics in work descriptions (e.g., 'optimized query execution latency by 35%')",
+        "Add a dedicated certifications section",
+        "Format contact details to explicitly list GitHub & LinkedIn URIs"
+      ]
+    }
+  ],
+  "learning": [
+    {
+      "id": "js",
+      "name": "JavaScript",
+      "notes": "Focus on closures, prototypes, event loops, and asynchronous JavaScript engines.",
+      "targetDate": "2026-09-10",
+      "subtopics": [
+        {
+          "name": "Closures, Lexical Scope & Hoisting",
+          "completed": true
+        },
+        {
+          "name": "Prototype Chain & Object Oriented JS",
+          "completed": true
+        },
+        {
+          "name": "Event Loop, Microtasks & Macrotasks",
+          "completed": true
+        },
+        {
+          "name": "Promises, Async/Await & Custom Promises",
+          "completed": true
+        },
+        {
+          "name": "ES6+ Features & Standard Web APIs",
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "notes": "Master hooks, state modeling, React Query, and rendering lifecycles.",
+      "targetDate": "2026-09-15",
+      "subtopics": [
+        {
+          "name": "State, Props & Lifecycle hooks",
+          "completed": true
+        },
+        {
+          "name": "Advanced Hooks (useCallback, useMemo, custom hooks)",
+          "completed": true
+        },
+        {
+          "name": "Context API & Centralized State",
+          "completed": true
+        },
+        {
+          "name": "React Query & Server Cache",
+          "completed": true
+        },
+        {
+          "name": "Virtual DOM, Fiber Architecture & Reconciliation",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "node",
+      "name": "Node.js",
+      "notes": "Deep-dive into event-driven design, buffers, streams, and worker threads.",
+      "targetDate": "2026-09-20",
+      "subtopics": [
+        {
+          "name": "Event Loop & EventEmitter pattern",
+          "completed": true
+        },
+        {
+          "name": "Buffer & Stream Management",
+          "completed": true
+        },
+        {
+          "name": "Cluster Module & Child Processes",
+          "completed": false
+        },
+        {
+          "name": "File System (fs) & Path APIs",
+          "completed": true
+        },
+        {
+          "name": "Security & Error handling practices",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "express",
+      "name": "Express",
+      "notes": "Learn custom middlewares, routing patterns, and security modules.",
+      "targetDate": "2026-09-22",
+      "subtopics": [
+        {
+          "name": "Middleware Pipeline & Custom Middlewares",
+          "completed": true
+        },
+        {
+          "name": "Router & Parameter Sanitization",
+          "completed": true
+        },
+        {
+          "name": "Global Exception Handling & Logging",
+          "completed": true
+        },
+        {
+          "name": "Security Headers (Helmet, CORS)",
+          "completed": true
+        },
+        {
+          "name": "Rate Limiter & Speed Limiting",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "mongodb",
+      "name": "MongoDB",
+      "notes": "Understand index compilation, aggregation frameworks, and replica sets.",
+      "targetDate": "2026-09-25",
+      "subtopics": [
+        {
+          "name": "BSON Data Modeling & Schema Design",
+          "completed": true
+        },
+        {
+          "name": "Indexing (Single, Compound, TTL, Text)",
+          "completed": true
+        },
+        {
+          "name": "Aggregation Pipeline stages",
+          "completed": true
+        },
+        {
+          "name": "Transactions & ACID compatibility",
+          "completed": false
+        },
+        {
+          "name": "Replica Sets & Sharding architecture",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "system-design",
+      "name": "System Design",
+      "notes": "Practice scaling architectures, load balancers, caching layers, and database sharding.",
+      "targetDate": "2026-09-30",
+      "subtopics": [
+        {
+          "name": "Load Balancers & Reverse Proxies",
+          "completed": true
+        },
+        {
+          "name": "Horizontal Scaling vs Vertical Scaling",
+          "completed": true
+        },
+        {
+          "name": "Caching Strategies (Write-through, Cache-aside)",
+          "completed": true
+        },
+        {
+          "name": "Database Partitioning, Replication & Sharding",
+          "completed": false
+        },
+        {
+          "name": "Microservices & Message Queues (Kafka, RabbitMQ)",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "os",
+      "name": "Operating Systems",
+      "notes": "Revise process management, scheduling, virtual memory, and deadlocks.",
+      "targetDate": "2026-09-12",
+      "subtopics": [
+        {
+          "name": "Process vs Thread & Context Switching",
+          "completed": true
+        },
+        {
+          "name": "CPU Scheduling Algorithms (Round Robin, SRTF)",
+          "completed": true
+        },
+        {
+          "name": "Virtual Memory, Paging & Segmentation",
+          "completed": true
+        },
+        {
+          "name": "Deadlock Conditions & Avoidance (Banker's Algorithm)",
+          "completed": false
+        },
+        {
+          "name": "Inter-Process Communication (IPC) & Semaphores",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "dbms",
+      "name": "DBMS",
+      "notes": "Revise normalization rules, SQL locks, indexing structures, and transaction properties.",
+      "targetDate": "2026-09-14",
+      "subtopics": [
+        {
+          "name": "Entity-Relationship Diagrams & Mapping",
+          "completed": true
+        },
+        {
+          "name": "SQL Normalization (1NF, 2NF, 3NF, BCNF)",
+          "completed": true
+        },
+        {
+          "name": "ACID Properties & Transaction Isolation Levels",
+          "completed": true
+        },
+        {
+          "name": "B-Trees & B+ Trees Indexing structures",
+          "completed": false
+        },
+        {
+          "name": "Joins, Subqueries & Query Plan Optimizations",
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "networks",
+      "name": "Computer Networks",
+      "notes": "Study TCP/IP protocols, DNS lookups, TCP handshakes, and SSL/TLS structures.",
+      "targetDate": "2026-09-18",
+      "subtopics": [
+        {
+          "name": "OSI Model Layers & TCP/IP Protocol Stack",
+          "completed": true
+        },
+        {
+          "name": "TCP 3-Way Handshake & Congestion Control",
+          "completed": true
+        },
+        {
+          "name": "DNS resolution lookup steps",
+          "completed": true
+        },
+        {
+          "name": "HTTP vs HTTPS & SSL/TLS Handshake layers",
+          "completed": false
+        },
+        {
+          "name": "WebSockets vs HTTP Long Polling vs SSE",
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "oop",
+      "name": "OOP",
+      "notes": "Solidify object-oriented pillars, SOLID architecture design, and design patterns.",
+      "targetDate": "2026-09-10",
+      "subtopics": [
+        {
+          "name": "Four Pillars: Encapsulation, Inheritance, Polymorphism, Abstraction",
+          "completed": true
+        },
+        {
+          "name": "SOLID Design Principles",
+          "completed": true
+        },
+        {
+          "name": "Creational Patterns (Singleton, Factory, Builder)",
+          "completed": true
+        },
+        {
+          "name": "Structural Patterns (Adapter, Decorator, Proxy)",
+          "completed": false
+        },
+        {
+          "name": "Behavioral Patterns (Observer, Strategy, State)",
+          "completed": false
+        }
+      ]
+    }
+  ]
+}
