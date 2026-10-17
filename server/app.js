@@ -1,0 +1,61 @@
+import express from 'express'
+import cors from 'cors'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import errorHandler from './middleware/error.js'
+
+import authRoutes from './routes/auth.routes.js'
+import handleRoutes from './routes/handle.routes.js'
+import projectRoutes from './routes/project.routes.js'
+import noteRoutes from './routes/note.routes.js'
+import goalRoutes from './routes/goal.routes.js'
+import resumeRoutes from './routes/resume.routes.js'
+import learningRoutes from './routes/learning.routes.js'
+import summaryRoutes from './routes/summary.routes.js'
+import proxyRoutes from './routes/proxy.routes.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const app = express()
+
+// Core Middleware Pipeline
+app.use(cors())
+app.use(express.json({ limit: '5mb' }))
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'devtrack-backend',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+  })
+})
+
+// API Routers
+app.use('/api/auth', authRoutes)
+app.use('/api/handles', handleRoutes)
+app.use('/api/projects', projectRoutes)
+app.use('/api/notes', noteRoutes)
+app.use('/api/goals', goalRoutes)
+app.use('/api/resumes', resumeRoutes)
+app.use('/api/learning', learningRoutes)
+app.use('/api/dashboard-summary', summaryRoutes)
+app.use('/api/proxy', proxyRoutes)
+
+// Production static file serving for React SPA
+const distPath = path.join(__dirname, '..', 'dist')
+app.use(express.static(distPath))
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.sendFile(path.join(distPath, 'index.html'))
+  }
+  next()
+})
+
+// Centralized error handling
+app.use(errorHandler)
+
+export default app
