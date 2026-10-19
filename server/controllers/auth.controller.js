@@ -1,6 +1,25 @@
+import bcrypt from 'bcryptjs'
 import User from '../models/User.js'
 import { signJwtToken } from '../middleware/auth.js'
 import { isDbConnected } from '../config/db.js'
+
+// In-memory fallback user store when MongoDB is not connected
+const fallbackUsers = new Map()
+
+// Seed default demo user
+try {
+  fallbackUsers.set('devansh', {
+    id: 'demo-devansh-id',
+    username: 'devansh',
+    passwordHash: bcrypt.hashSync('devtrack2026', 10),
+    email: 'devansh@example.com',
+    university: 'Lovely Professional University',
+    role: 'user',
+    isPremium: true,
+  })
+} catch {
+  // Ignore sync hash error if any
+}
 
 export async function login(req, res, next) {
   try {
@@ -32,12 +51,34 @@ export async function login(req, res, next) {
     }
 
     // Fallback if DB is temporarily offline
+    const fallbackUser = fallbackUsers.get(cleanUser)
+    if (fallbackUser) {
+      const isMatch = await bcrypt.compare(cleanPass, fallbackUser.passwordHash)
+      if (isMatch) {
+        return res.json({
+          ok: true,
+          user: {
+            username: fallbackUser.username,
+            email: fallbackUser.email || '',
+            university: fallbackUser.university || '',
+            role: fallbackUser.role || 'user',
+            isPremium: !!fallbackUser.isPremium,
+          },
+          token: signJwtToken(fallbackUser),
+        })
+      }
+    }
+
     if (cleanUser === 'devansh' && cleanPass === 'devtrack2026') {
-      const fallbackUser = { id: 'fallback-id', username: 'devansh' }
+      const fallbackDevansh = {
+        id: 'fallback-id',
+        username: 'devansh',
+        university: 'Lovely Professional University',
+      }
       return res.json({
         ok: true,
-        user: { username: 'devansh' },
-        token: signJwtToken(fallbackUser),
+        user: { username: 'devansh', university: 'Lovely Professional University' },
+        token: signJwtToken(fallbackDevansh),
       })
     }
 
@@ -61,7 +102,33 @@ export async function register(req, res, next) {
     }
 
     if (!isDbConnected()) {
-      return res.status(503).json({ error: 'Database service unavailable for registration.' })
+      // In-memory resilient registration fallback
+      if (fallbackUsers.has(cleanUser)) {
+        return res.status(409).json({ error: 'Username is already taken.' })
+      }
+
+      const hashedPassword = await bcrypt.hash(cleanPass, 10)
+      const newFallbackUser = {
+        id: `local-${cleanUser}-${Date.now()}`,
+        username: cleanUser,
+        passwordHash: hashedPassword,
+        email: typeof email === 'string' ? email.trim() : '',
+        university: typeof university === 'string' ? university.trim() : '',
+        role: 'user',
+        isPremium: false,
+      }
+      fallbackUsers.set(cleanUser, newFallbackUser)
+
+      const token = signJwtToken(newFallbackUser)
+      return res.status(201).json({
+        ok: true,
+        user: {
+          username: newFallbackUser.username,
+          email: newFallbackUser.email,
+          university: newFallbackUser.university,
+        },
+        token,
+      })
     }
 
     const existing = await User.findOne({ username: cleanUser })
