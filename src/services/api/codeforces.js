@@ -95,19 +95,17 @@ export async function fetchCodeforcesAll(handle) {
     return {
       profile: {
         handle,
-        rating: 1740,
-        maxRating: 1820,
-        rank: 'expert',
-        maxRank: 'candidate master',
+        rating: 0,
+        maxRating: 0,
+        rank: 'unrated',
+        maxRank: 'unrated',
         avatar: '',
-        contribution: 12,
+        contribution: 0,
       },
-      ratingHistory: [
-        { contestName: 'Codeforces Round 920', rank: 412, oldRating: 1680, newRating: 1715, date: 'Nov 24' },
-        { contestName: 'Educational Round 165', rank: 320, oldRating: 1715, newRating: 1740, date: 'Dec 24' },
-      ],
-      solvedCount: 184,
-      isDemo: true,
+      ratingHistory: [],
+      solvedCount: 0,
+      submissionDates: {},
+      isDemo: false,
     }
   }
 }

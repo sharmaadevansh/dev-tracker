@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { fetchHandles, updateHandlesRequest } from '../services/api/backend'
 import { useAuth } from './AuthContext'
+import { getScopedItem, setScopedItem, removeScopedItem } from '../utils/storage'
 
 const UserContext = createContext(null)
 
-const STORAGE_KEY = 'devtrack_handles'
-const PLATFORMS_STORAGE_KEY = 'devtrack_active_platforms'
+const HANDLES_KEY = 'handles'
+const PLATFORMS_KEY = 'active_platforms'
+const UNIVERSITY_KEY = 'university'
 
 const EMPTY_HANDLES = {
   github: '',
@@ -25,32 +27,33 @@ export const DEFAULT_ACTIVE_PLATFORMS = {
   linkedin: false,
 }
 
-function loadHandles() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? { ...EMPTY_HANDLES, ...JSON.parse(raw) } : EMPTY_HANDLES
-  } catch {
-    return EMPTY_HANDLES
-  }
-}
-
-function loadActivePlatforms() {
-  try {
-    const raw = localStorage.getItem(PLATFORMS_STORAGE_KEY)
-    return raw ? { ...DEFAULT_ACTIVE_PLATFORMS, ...JSON.parse(raw) } : DEFAULT_ACTIVE_PLATFORMS
-  } catch {
-    return DEFAULT_ACTIVE_PLATFORMS
-  }
-}
-
 export function UserProvider({ children }) {
-  const { isAuthenticated } = useAuth()
-  const [handles, setHandlesState] = useState(loadHandles)
-  const [activePlatforms, setActivePlatformsState] = useState(loadActivePlatforms)
+  const { user, isAuthenticated } = useAuth()
+  const username = user?.username || ''
+
+  const [handles, setHandlesState] = useState(() =>
+    getScopedItem(HANDLES_KEY, username, EMPTY_HANDLES)
+  )
+  const [activePlatforms, setActivePlatformsState] = useState(() =>
+    getScopedItem(PLATFORMS_KEY, username, DEFAULT_ACTIVE_PLATFORMS)
+  )
+  const [university, setUniversityState] = useState(() =>
+    getScopedItem(UNIVERSITY_KEY, username, '')
+  )
   const [handlesLoading, setHandlesLoading] = useState(false)
 
+  // Re-sync local state when active authenticated user switches
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) {
+      setHandlesState(EMPTY_HANDLES)
+      setActivePlatformsState(DEFAULT_ACTIVE_PLATFORMS)
+      setUniversityState('')
+      return
+    }
+
+    setHandlesState(getScopedItem(HANDLES_KEY, username, EMPTY_HANDLES))
+    setActivePlatformsState(getScopedItem(PLATFORMS_KEY, username, DEFAULT_ACTIVE_PLATFORMS))
+    setUniversityState(getScopedItem(UNIVERSITY_KEY, username, ''))
 
     const loadRemoteHandles = async () => {
       setHandlesLoading(true)
@@ -58,51 +61,65 @@ export function UserProvider({ children }) {
         const remoteData = await fetchHandles()
         const remoteHandles = remoteData.handles || remoteData
         const remotePlatforms = remoteData.activePlatforms || null
+        const remoteUni = remoteData.university || ''
 
         const mergedHandles = { ...EMPTY_HANDLES, ...remoteHandles }
         setHandlesState(mergedHandles)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedHandles))
+        setScopedItem(HANDLES_KEY, username, mergedHandles)
 
         if (remotePlatforms) {
           const mergedPlatforms = { ...DEFAULT_ACTIVE_PLATFORMS, ...remotePlatforms }
           setActivePlatformsState(mergedPlatforms)
-          localStorage.setItem(PLATFORMS_STORAGE_KEY, JSON.stringify(mergedPlatforms))
+          setScopedItem(PLATFORMS_KEY, username, mergedPlatforms)
+        }
+
+        if (remoteUni) {
+          setUniversityState(remoteUni)
+          setScopedItem(UNIVERSITY_KEY, username, remoteUni)
         }
       } catch {
-        setHandlesState(loadHandles())
-        setActivePlatformsState(loadActivePlatforms())
+        // Fall back to current scoped local cache
       } finally {
         setHandlesLoading(false)
       }
     }
 
     loadRemoteHandles()
-  }, [isAuthenticated])
+  }, [isAuthenticated, username])
 
-  const setHandles = async (nextHandles, nextPlatforms = null) => {
+  const setHandles = async (nextHandles, nextPlatforms = null, nextUniversity = null) => {
     const mergedHandles = { ...handles, ...nextHandles }
     const mergedPlatforms = nextPlatforms ? { ...activePlatforms, ...nextPlatforms } : activePlatforms
+    const finalUniversity = nextUniversity !== null ? nextUniversity : university
 
     setHandlesState(mergedHandles)
     setActivePlatformsState(mergedPlatforms)
+    setUniversityState(finalUniversity)
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedHandles))
-    localStorage.setItem(PLATFORMS_STORAGE_KEY, JSON.stringify(mergedPlatforms))
+    setScopedItem(HANDLES_KEY, username, mergedHandles)
+    setScopedItem(PLATFORMS_KEY, username, mergedPlatforms)
+    setScopedItem(UNIVERSITY_KEY, username, finalUniversity)
 
     try {
       const response = await updateHandlesRequest({
         handles: mergedHandles,
         activePlatforms: mergedPlatforms,
+        university: finalUniversity,
       })
       const remoteHandles = response.handles || response
       const normalizedHandles = { ...EMPTY_HANDLES, ...remoteHandles }
       setHandlesState(normalizedHandles)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedHandles))
+      setScopedItem(HANDLES_KEY, username, normalizedHandles)
 
       if (response.activePlatforms) {
         const normalizedPlatforms = { ...DEFAULT_ACTIVE_PLATFORMS, ...response.activePlatforms }
         setActivePlatformsState(normalizedPlatforms)
-        localStorage.setItem(PLATFORMS_STORAGE_KEY, JSON.stringify(normalizedPlatforms))
+        setScopedItem(PLATFORMS_KEY, username, normalizedPlatforms)
+      }
+
+      if (response.university) {
+        setUniversityState(response.university)
+        setScopedItem(UNIVERSITY_KEY, username, response.university)
       }
       return { ok: true }
     } catch (error) {
@@ -119,7 +136,7 @@ export function UserProvider({ children }) {
       [platformKey]: !activePlatforms[platformKey],
     }
     setActivePlatformsState(nextPlatforms)
-    localStorage.setItem(PLATFORMS_STORAGE_KEY, JSON.stringify(nextPlatforms))
+    setScopedItem(PLATFORMS_KEY, username, nextPlatforms)
 
     try {
       await updateHandlesRequest({
@@ -137,7 +154,7 @@ export function UserProvider({ children }) {
       [platformKey]: !!isActive,
     }
     setActivePlatformsState(nextPlatforms)
-    localStorage.setItem(PLATFORMS_STORAGE_KEY, JSON.stringify(nextPlatforms))
+    setScopedItem(PLATFORMS_KEY, username, nextPlatforms)
 
     try {
       await updateHandlesRequest({
@@ -150,8 +167,9 @@ export function UserProvider({ children }) {
   }
 
   const clearHandles = () => {
-    localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem(PLATFORMS_STORAGE_KEY)
+    removeScopedItem(HANDLES_KEY, username)
+    removeScopedItem(PLATFORMS_KEY, username)
+    removeScopedItem(UNIVERSITY_KEY, username)
     setHandlesState(EMPTY_HANDLES)
     setActivePlatformsState(DEFAULT_ACTIVE_PLATFORMS)
   }
@@ -167,6 +185,7 @@ export function UserProvider({ children }) {
       value={{
         handles,
         activePlatforms,
+        university,
         setHandles,
         togglePlatform,
         setPlatformActive,

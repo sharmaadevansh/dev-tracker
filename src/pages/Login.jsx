@@ -1,314 +1,282 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Terminal, ArrowRight, Shield, RefreshCw } from 'lucide-react'
+import { ArrowRight, Shield, Sparkles, Code2, Trophy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-const SIMULATED_LOGS = [
-  'INITIALIZING SYSTEM DEPLOYMENT...',
-  'ESTABLISHING ENCRYPTED SESSION KEYS...',
-  'CONNECTING TO GITHUB API v3... SUCCESS',
-  'ESTABLISHING LEETCODE GRAPHQL SOCKET... SUCCESS',
-  'SYNCING CODEFORCES SUBMISSION STREAM... SUCCESS',
-  'RESOLVING CODECHEF COMPETITIVE RATING... SUCCESS',
-  'FETCHING GFG INSTITUTE POSITION... SUCCESS',
-  'IMPORTING USER PROFILE CONTEXT... DONE',
-  'COMPILE RUN COMPLETED. ALL PIPELINES ACTIVE.',
-  'AWAITING DECRYPT ACCESS SIGNATURE FROM CLIENT...',
-]
-
-const RANDOM_LOG_TEMPLATES = [
-  'INITIALIZING SYSTEM DEPLOYMENT...',
-  'ESTABLISHING ENCRYPTED SESSION KEYS...',
-  'CONNECTING TO GITHUB API v3... SUCCESS',
-  'ESTABLISHING LEETCODE GRAPHQL SOCKET... SUCCESS',
-  'SYNCING CODEFORCES SUBMISSION STREAM... SUCCESS',
-  'RESOLVING CODECHEF COMPETITIVE RATING... SUCCESS',
-  'FETCHING GFG INSTITUTE POSITION... SUCCESS',
-  'IMPORTING USER PROFILE CONTEXT... DONE',
-  'COMPILE RUN COMPLETED. ALL PIPELINES ACTIVE.',
-  'AWAITING DECRYPT ACCESS SIGNATURE FROM CLIENT...',
-  'SYSTEM: compiling sector analytics_engine...',
-  'GITHUB: resolved 25 active repositories.',
-  'LEETCODE: GraphQL query resolved successfully (latency 86ms).',
-  'CODEFORCES: submission stream listening on active sockets.',
-  'SECURITY: decrypting client passkey hash signature... OK',
-  'DATABASE: connection established with localized indexedDB.',
-  'ATS: scanning resume corpus for keyword matches...',
-  'SYS_DESIGN: scaled cache cluster check - status optimal.',
-  'SERVER: active worker threads: 256/256.',
-  'PORT: 5173 initialized and listening for traffic.',
-  'CORE: syncing dashboard navigation components...',
-  'PIPELINE: daily goal routine compilation running...',
-  'COMPILER: modules loaded: AuthContext, UserContext, StatCard.',
-  'CACHING: memory buffers purged successfully.',
-  'SECURITY: SSL handshake complete on secure client gateways.',
-]
-
-const defaultColors = ['#b8f22f', '#ff4a4a', '#ff9d00', '#0084ff', '#8c63ff', '#ff00b8', '#00d5ff', '#b8f22f', '#ff9d00', '#8c63ff']
-const hoverColors = ['#ff4a4a', '#ff9d00', '#0084ff', '#8c63ff', '#ff00b8', '#00d5ff', '#b8f22f', '#ff4a4a', '#8c63ff', '#00d5ff']
-
-function ColorfulLetter({ char, index }) {
-  const [hovered, setHovered] = useState(false)
-  
-  const handleMouseEnter = () => {
-    setHovered(true)
-  }
-  
-  const handleMouseLeave = () => {
-    setHovered(false)
-  }
-
-  return (
-    <span
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{ 
-        color: hovered ? defaultColors[index % defaultColors.length] : '#0d1117',
-        fontFamily: hovered ? "'Caveat', cursive" : "var(--font-display)",
-        transition: 'color 0.2s ease, font-family 0.1s ease',
-        display: 'inline-block',
-        transform: hovered ? 'scale(1.15) rotate(-5deg)' : 'scale(1) rotate(0deg)'
-      }}
-      className="cursor-pointer font-extrabold px-[1px] transition-transform duration-200"
-    >
-      {char}
-    </span>
-  )
-}
-
-export default function Login() {
-  const [showForm, setShowForm] = useState(false)
+export default function Login({ defaultMode = 'login' }) {
+  const [authMode, setAuthMode] = useState(defaultMode)
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [booting, setBooting] = useState(false)
-  const [runningLogs, setRunningLogs] = useState([])
 
-  const { login } = useAuth()
+  const { login, register } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Fill the screen with initial log entries immediately
-    let initial = []
-    for (let i = 0; i < 24; i++) {
-      initial.push(RANDOM_LOG_TEMPLATES[i % RANDOM_LOG_TEMPLATES.length])
-    }
-    setRunningLogs(initial)
-
-    // Continuously append a new random log line every 400ms
-    const interval = setInterval(() => {
-      setRunningLogs((prev) => {
-        const nextLog = RANDOM_LOG_TEMPLATES[Math.floor(Math.random() * RANDOM_LOG_TEMPLATES.length)]
-        return [...prev.slice(-26), nextLog] // Keep only the latest 26 log lines to fit clean viewport
-      })
-    }, 400)
-
-    return () => clearInterval(interval)
-  }, [])
+    setAuthMode(defaultMode)
+  }, [defaultMode])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setBooting(true)
-    const result = await login(username, password)
-    if (!result.ok) {
-      setBooting(false)
-      setError(result.error)
-      return
+
+    if (authMode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.')
+        return
+      }
+      setBooting(true)
+      const result = await register(username, password, email)
+      if (!result.ok) {
+        setBooting(false)
+        setError(result.error)
+        return
+      }
+    } else {
+      setBooting(true)
+      const result = await login(username, password)
+      if (!result.ok) {
+        setBooting(false)
+        setError(result.error)
+        return
+      }
     }
-    setTimeout(() => navigate('/setup'), 1200)
+
+    if (authMode === 'signup') {
+      setTimeout(() => navigate('/setup'), 700)
+    } else {
+      setTimeout(() => navigate('/dashboard'), 500)
+    }
   }
 
   return (
-    <div 
-      className="h-full min-h-0 flex flex-col relative overflow-hidden rounded-[40px] border border-hairline/70 shadow-[0_20px_60px_rgba(35,28,23,0.08)] backdrop-blur-2xl"
-      style={{ background: 'radial-gradient(circle at center, #ffffff 0%, #ecf9ce 100%)' }}
-    >
-      {/* Visual background accents */}
-      <div className="absolute inset-0 scanline pointer-events-none z-20" />
-      <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-signal/15 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-violet/15 blur-3xl pointer-events-none" />
+    <div className="h-full min-h-0 flex flex-col relative overflow-hidden rounded-[28px] sm:rounded-[36px] border border-hairline/70 shadow-[0_20px_60px_rgba(35,28,23,0.08)] backdrop-blur-2xl bg-void">
+      {/* Visual background ambient lighting */}
+      <div className="absolute inset-0 scanline pointer-events-none z-0" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-signal/15 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-violet/15 blur-3xl pointer-events-none" />
 
-      {/* Full-screen terminal background stream (GLOBAL BACKGROUND) - ONLY RENDERS WHEN FORM IS SHOWN */}
-      {showForm && (
-        <div 
-          className="absolute inset-0 p-8 sm:p-12 font-mono text-xs overflow-hidden select-none z-0 flex flex-col justify-end"
-          style={{
-            backgroundImage: 'linear-gradient(0deg, rgba(255,255,255,0.7) 50%, rgba(186,255,43,0.06) 50%)',
-            backgroundSize: '100% 4px'
-          }}
-        >
-          {/* Dual-column logs floating on left and right sides of the background */}
-          <div className="flex-1 overflow-hidden flex justify-between items-stretch gap-8 opacity-80 my-2 select-none">
-            {/* Left Column (Even indexes, aligned left) */}
-            <div className="w-1/2 sm:w-1/3 flex flex-col justify-end gap-1.5 pr-2">
-              {runningLogs.map((log, index) => (
-                index % 2 === 0 && (
-                  <div 
-                    key={index} 
-                    style={{ fontFamily: "'Caveat', cursive" }}
-                    className="leading-none text-[#2b4c03]/75 font-bold text-[19px] whitespace-nowrap truncate text-left"
-                  >
-                    <span className="text-[#4c8402] font-black mr-1.5">&gt;</span> {log}
-                  </div>
-                )
-              ))}
+      {/* Main Container */}
+      <div className="flex-1 w-full h-full flex flex-col lg:flex-row items-center justify-center p-6 sm:p-10 lg:p-14 gap-8 lg:gap-16 relative z-10 overflow-y-auto scrollbar-thin">
+        
+        {/* Left Column: Professional SaaS Headline & Value Proposition (Desktop) */}
+        <div className="hidden lg:flex flex-col flex-1 max-w-lg space-y-6 select-none">
+          <div className="inline-flex items-center gap-2 badge-base badge-signal self-start">
+            <Sparkles size={13} className="text-signal-dim" />
+            <span className="badge-label">DevTrack Engine</span>
+            <span className="badge-value">v2.4.0</span>
+          </div>
+
+          <div className="space-y-3">
+            <h1 className="font-display text-4xl xl:text-5xl font-extrabold text-chrome tracking-tight leading-[1.15]">
+              Unified Developer Intelligence Hub
+            </h1>
+            <p className="text-sm text-chrome-dim font-sans leading-relaxed">
+              Real-time competitive programming ratings, GitHub repository metrics, multi-university rankings, and verified engineering credentials in one workspace.
+            </p>
+          </div>
+
+          {/* Value points */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-3 text-xs font-sans text-chrome">
+              <div className="w-7 h-7 rounded-lg bg-yellow/15 border border-yellow/30 flex items-center justify-center text-yellow shrink-0">
+                <Code2 size={14} />
+              </div>
+              <span className="font-medium">Direct synchronization with LeetCode, Codeforces, CodeChef & GFG</span>
             </div>
 
-            {/* Right Column (Odd indexes, aligned right) */}
-            <div className="w-1/2 sm:w-1/3 flex flex-col justify-end gap-1.5 pl-2 text-right">
-              {runningLogs.map((log, index) => (
-                index % 2 !== 0 && (
-                  <div 
-                    key={index} 
-                    style={{ fontFamily: "'Caveat', cursive" }}
-                    className="leading-none text-[#2b4c03]/75 font-bold text-[19px] whitespace-nowrap truncate text-right"
-                  >
-                    {log} <span className="text-[#4c8402] font-black ml-1.5">&lt;</span>
-                  </div>
-                )
-              ))}
+            <div className="flex items-center gap-3 text-xs font-sans text-chrome">
+              <div className="w-7 h-7 rounded-lg bg-signal/15 border border-signal/30 flex items-center justify-center text-signal-dim shrink-0">
+                <Trophy size={14} />
+              </div>
+              <span className="font-medium">Weighted DevScore calculation with verified global and campus ranking</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs font-sans text-chrome">
+              <div className="w-7 h-7 rounded-lg bg-violet/15 border border-violet/30 flex items-center justify-center text-violet shrink-0">
+                <Shield size={14} />
+              </div>
+              <span className="font-medium">ATS-optimized resume PDF export & automated GitHub profile badges</span>
             </div>
           </div>
         </div>
-      )}
 
-      <AnimatePresence mode="wait">
-        {!showForm ? (
-          <motion.div
-            key="full-splash"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 w-full h-full flex flex-col items-center justify-center text-center p-6 relative z-10 select-none"
-          >
-            <div className="text-6xl sm:text-7xl md:text-8xl font-black font-display tracking-tight mb-4 select-none leading-none">
-              {'DevTracker'.split('').map((char, index) => (
-                <ColorfulLetter key={index} char={char} index={index} />
-              ))}
+        {/* Right Column: Centered Developer Auth Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="w-full max-w-sm rounded-[32px] p-8 sm:p-10 relative bg-gunmetal/95 border border-hairline/80 shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-xl z-10 flex flex-col shrink-0"
+        >
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 mb-6 justify-center">
+            <div className="w-8 h-8 rounded-full bg-signal/20 border border-signal/40 flex items-center justify-center text-signal-dim">
+              <Code2 size={16} strokeWidth={2.5} />
             </div>
+            <span className="font-display font-extrabold text-xl tracking-tight text-chrome">
+              DevTrack<span className="text-signal-dim">.AI</span>
+            </span>
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center justify-center p-1 bg-steel rounded-2xl mb-6 border border-hairline">
             <button
-              onClick={() => setShowForm(true)}
-              className="mt-12 w-14 h-14 rounded-full bg-gradient-to-r from-signal to-violet hover:scale-110 flex items-center justify-center text-chrome cursor-pointer transition-all duration-300 shadow-[0_15px_30px_rgba(140,99,255,0.15)]"
+              type="button"
+              onClick={() => { setAuthMode('login'); setError('') }}
+              className={`flex-1 py-2 text-xs font-sans font-semibold rounded-xl transition-all cursor-pointer ${
+                authMode === 'login'
+                  ? 'bg-gunmetal text-chrome shadow-xs'
+                  : 'text-chrome-dim hover:text-chrome'
+              }`}
             >
-              <ArrowRight size={20} />
+              Sign In
             </button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="centered-portal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.35 }}
-            className="flex-1 w-full h-full flex items-center justify-center p-6 relative z-10 min-h-0"
-          >
-
-            {/* Centered Login Card Box */}
-            <div 
-              className="w-full max-w-sm rounded-[32px] p-8 sm:p-10 relative bg-white/90 border border-[#baff2b]/30 shadow-[0_20px_50px_rgba(30,50,10,0.06)] backdrop-blur-xl z-10 flex flex-col"
-              style={{
-                boxShadow: '0 0 30px rgba(186, 255, 43, 0.08)'
-              }}
+            <button
+              type="button"
+              onClick={() => { setAuthMode('signup'); setError('') }}
+              className={`flex-1 py-2 text-xs font-sans font-semibold rounded-xl transition-all cursor-pointer ${
+                authMode === 'signup'
+                  ? 'bg-gunmetal text-chrome shadow-xs'
+                  : 'text-chrome-dim hover:text-chrome'
+              }`}
             >
-              {/* Logo */}
-              <div className="flex items-center gap-2 mb-6 justify-center">
-                <Terminal size={18} className="text-[#4c8402]" />
-                <span className="font-display font-extrabold text-lg tracking-tight text-chrome">
-                  {'DevTracker'.split('').map((char, index) => (
-                    <ColorfulLetter key={index} char={char} index={index} />
-                  ))}
-                </span>
-              </div>
+              Create Account
+            </button>
+          </div>
 
-              <div className="text-center mb-8">
-                <h2 className="font-display text-2xl font-bold text-[#0d1117] tracking-tight uppercase font-mono">
-                  Console Sign In
-                </h2>
-                <p className="text-[10px] text-chrome-dim/70 font-mono mt-1.5 flex items-center justify-center gap-1.5 tracking-wider font-semibold">
-                  <Shield size={12} className="text-[#4c8402]" /> DECRYPTION AUTH REQUIRED
-                </p>
-              </div>
+          <div className="text-center mb-6">
+            <h2 className="font-display text-2xl font-bold text-chrome tracking-tight uppercase">
+              {authMode === 'signup' ? 'Create Account' : 'Welcome Back'}
+            </h2>
+            <p className="text-xs text-chrome-dim font-sans mt-1.5 font-medium">
+              {authMode === 'signup' ? 'Set up your verified developer profile' : 'Enter your credentials to access your dashboard'}
+            </p>
+          </div>
 
-              <AnimatePresence mode="wait">
-                {!booting ? (
-                  <motion.form
-                    key="form"
-                    exit={{ opacity: 0, y: -10 }}
-                    onSubmit={handleSubmit}
-                    className="flex flex-col gap-5"
-                  >
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] uppercase tracking-widest text-chrome-dim/60 font-bold font-mono">
-                        Client Username
-                      </label>
-                      <input
-                        autoFocus
-                        required
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="bg-[#f4f7f0]/70 border border-[#baff2b]/30 rounded-2xl px-5 py-3 text-xs font-mono outline-none text-[#0d1117] focus:border-[#4c8402] focus:ring-1 focus:ring-[#4c8402]/30 transition-all duration-200"
-                        placeholder="devansh"
-                      />
-                    </div>
+          <AnimatePresence mode="wait">
+            {!booting ? (
+              <motion.form
+                key={authMode}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] uppercase tracking-wider text-chrome-dim/75 font-semibold font-sans">
+                    Username
+                  </label>
+                  <input
+                    autoFocus
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-steel/60 border border-hairline rounded-xl px-4 py-2.5 text-xs font-sans outline-none text-chrome focus:border-signal focus:ring-2 focus:ring-signal/20 transition-all duration-200"
+                    placeholder={authMode === 'signup' ? 'e.g. dev_coder' : 'your_username'}
+                  />
+                </div>
 
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] uppercase tracking-widest text-chrome-dim/60 font-bold font-mono">
-                        Client Passkey
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="bg-[#f4f7f0]/70 border border-[#baff2b]/30 rounded-2xl px-5 py-3 text-xs font-mono outline-none text-[#0d1117] focus:border-[#4c8402] focus:ring-1 focus:ring-[#4c8402]/30 transition-all duration-200"
-                        placeholder="••••••••••"
-                      />
-                    </div>
-
-                    {error && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -2 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-xs text-red-600 font-mono bg-red-500/5 border border-red-500/10 rounded-xl p-3 text-center"
-                      >
-                        ACCESS_DENIED: {error}
-                      </motion.p>
-                    )}
-
-                    <button
-                      type="submit"
-                      className="mt-3 flex items-center justify-center gap-2 bg-gradient-to-r from-[#baff2b] to-[#8c63ff] hover:opacity-95 text-[#0d1117] font-bold text-xs uppercase tracking-wider py-3.5 px-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_20px_rgba(140,99,255,0.18)]"
-                    >
-                      Decrypt & Authorize
-                      <ArrowRight size={15} />
-                    </button>
-                  </motion.form>
-                ) : (
-                  <motion.div
-                    key="boot"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="font-mono text-xs text-chrome-dim flex flex-col gap-2.5 py-6"
-                  >
-                    <div className="flex items-center gap-2 justify-center">
-                      <span className="w-2.5 h-2.5 rounded-full bg-signal animate-ping" />
-                      <p className="text-signal font-bold uppercase tracking-wider">✓ session handshake active</p>
-                    </div>
-                    <p className="text-chrome-dim/60 text-center">INITIALIZING SYSTEM SHIELDS...</p>
-                    <p className="text-chrome-dim/60 text-center">SYNCING PLATFORM WRAPPER CACHES...</p>
-                    <p className="text-chrome-dim/60 text-center flex items-center justify-center gap-1.5">
-                      MOUNTING MAIN PANEL ROUTERS <span className="cursor-blink">_</span>
-                    </p>
-                  </motion.div>
+                {authMode === 'signup' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] uppercase tracking-wider text-chrome-dim/75 font-semibold font-sans">
+                      Email Address (Optional)
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-steel/60 border border-hairline rounded-xl px-4 py-2.5 text-xs font-sans outline-none text-chrome focus:border-signal focus:ring-2 focus:ring-signal/20 transition-all duration-200"
+                      placeholder="coder@example.com"
+                    />
+                  </div>
                 )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] uppercase tracking-wider text-chrome-dim/75 font-semibold font-sans">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-steel/60 border border-hairline rounded-xl px-4 py-2.5 text-xs font-sans outline-none text-chrome focus:border-signal focus:ring-2 focus:ring-signal/20 transition-all duration-200"
+                    placeholder={authMode === 'signup' ? 'Min 6 characters' : '••••••••••'}
+                  />
+                </div>
+
+                {authMode === 'signup' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] uppercase tracking-wider text-chrome-dim/75 font-semibold font-sans">
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-steel/60 border border-hairline rounded-xl px-4 py-2.5 text-xs font-sans outline-none text-chrome focus:border-signal focus:ring-2 focus:ring-signal/20 transition-all duration-200"
+                      placeholder="Repeat password"
+                    />
+                  </div>
+                )}
+
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-red-600 font-sans bg-red-500/10 border border-red-500/20 rounded-xl p-2.5 text-center font-medium"
+                  >
+                    {error}
+                  </motion.p>
+                )}
+
+                <button
+                  type="submit"
+                  className="mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-signal to-violet hover:opacity-95 text-void font-bold text-xs uppercase tracking-wider py-3.5 px-5 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-[0_8px_20px_rgba(140,99,255,0.18)] font-sans"
+                >
+                  {authMode === 'signup' ? 'Create Account' : 'Sign In'}
+                  <ArrowRight size={15} />
+                </button>
+
+                <div className="text-center mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode(authMode === 'login' ? 'signup' : 'login')
+                      setError('')
+                    }}
+                    className="text-xs font-sans text-chrome-dim hover:text-signal-dim transition-colors cursor-pointer underline decoration-dotted"
+                  >
+                    {authMode === 'login'
+                      ? 'New developer? Create an account here'
+                      : 'Already registered? Sign in here'}
+                  </button>
+                </div>
+              </motion.form>
+            ) : (
+              <motion.div
+                key="boot"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="font-sans text-xs text-chrome-dim flex flex-col items-center justify-center gap-2.5 py-10 text-center"
+              >
+                <div className="w-8 h-8 rounded-full border-2 border-signal border-t-transparent animate-spin mb-1" />
+                <p className="text-chrome font-bold uppercase tracking-wider text-xs font-sans">
+                  {authMode === 'signup' ? 'Account Created' : 'Signing In'}
+                </p>
+                <p className="text-chrome-dim text-xs font-sans">Preparing your developer workspace...</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
     </div>
   )
 }

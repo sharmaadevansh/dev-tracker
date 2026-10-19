@@ -1,67 +1,19 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Pin, Trash2, BookOpen, Edit2, Eye, FolderPlus, Tag } from 'lucide-react'
+import { Plus, Search, Pin, Trash2, BookOpen, Edit2, Eye, FolderPlus, Tag, FileText } from 'lucide-react'
 import {
   createCollectionItem,
   deleteCollectionItem,
   fetchCollection,
   updateCollectionItem,
 } from '../services/api/backend'
+import { useAuth } from '../context/AuthContext'
+import { getScopedItem, setScopedItem } from '../utils/storage'
 
-const STORAGE_KEY = 'devtrack_notes'
+const NOTES_STORAGE_KEY = 'notes'
 
-function loadNotes() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return [
-    {
-      id: 'default-1',
-      title: 'Graph Algorithms Cheatsheet',
-      content: `# Graph Algorithms
-
-A quick index of essential graph algorithms for DSA rounds:
-
-## 1. Breadth-First Search (BFS)
-- **Time Complexity**: \`O(V + E)\`
-- **Space Complexity**: \`O(V)\`
-- **Use Case**: Shortest path in unweighted graphs.
-
-## 2. Dijkstra's Algorithm
-- **Time Complexity**: \`O((V + E) log V)\` using priority queues.
-- **Space Complexity**: \`O(V)\`
-- **Constraint**: Cannot handle negative edge weights.
-
-> Note: For negative weights, use Bellman-Ford \`O(VE)\`.`,
-      folder: 'DSA',
-      tags: 'graphs, cheatsheet, algorithms',
-      pinned: true,
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: 'default-2',
-      title: 'System Design: Scaling Cache Layers',
-      content: `# Scaling Caches
-
-Design details for caching:
-
-## Eviction Policies
-1. **LRU**: Least Recently Used
-2. **LFU**: Least Frequently Used
-3. **FIFO**: First In First Out
-
-## Write Strategies
-- **Cache-Aside**: Application queries cache first. If cache miss, queries DB, updates cache, and returns.
-- **Write-Through**: Updates written to cache and DB simultaneously.`,
-      folder: 'System Design',
-      tags: 'caching, performance, backend',
-      pinned: false,
-      updatedAt: new Date().toISOString()
-    }
-  ]
-}
+const DEFAULT_NOTES = []
 
 function parseMarkdown(text) {
   if (!text) return ''
@@ -118,17 +70,20 @@ export default function Notes() {
   const [newFolderInput, setNewFolderInput] = useState('')
   const [showNewFolderModal, setShowNewFolderModal] = useState(false)
 
+  const { user } = useAuth()
+  const username = user?.username || ''
+
   const { data: remoteNotes } = useQuery({
-    queryKey: ['backend-notes'],
+    queryKey: ['backend-notes', username],
     queryFn: () => fetchCollection('notes'),
-    initialData: loadNotes,
+    initialData: () => getScopedItem(NOTES_STORAGE_KEY, username, DEFAULT_NOTES),
   })
 
   const notes = useMemo(() => remoteNotes || [], [remoteNotes])
 
   const syncNotesCache = (nextNotes) => {
-    queryClient.setQueryData(['backend-notes'], nextNotes)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes))
+    queryClient.setQueryData(['backend-notes', username], nextNotes)
+    setScopedItem(NOTES_STORAGE_KEY, username, nextNotes)
   }
 
   const createMutation = useMutation({
@@ -226,7 +181,7 @@ export default function Notes() {
             <span className="font-display font-semibold text-chrome text-[15px]">Notes</span>
             <button
               onClick={handleCreateNote}
-              className="w-7 h-7 bg-signal hover:bg-signal-dim rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+              className="w-7 h-7 bg-signal hover:opacity-90 rounded-full flex items-center justify-center text-void font-bold transition-all cursor-pointer shadow-xs"
             >
               <Plus size={15} />
             </button>
@@ -284,18 +239,18 @@ export default function Notes() {
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-chrome-dim truncate mt-1">
+              <p className="text-xs text-chrome-dim truncate mt-1 font-sans">
                 {n.content ? n.content.replace(/[#*`>]/g, '') : 'Empty note'}
               </p>
-              <div className="flex items-center justify-between mt-2 text-[9px] font-mono">
-                <span className="text-signal">{n.folder}</span>
+              <div className="flex items-center justify-between mt-2 text-[11px] font-sans text-chrome-dim">
+                <span className="text-signal-dim font-medium">{n.folder}</span>
                 <span>{new Date(n.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
           ))}
 
           {filteredNotes.length === 0 && (
-            <p className="text-xs text-chrome-dim text-center py-8">No notes matches filter.</p>
+            <p className="text-xs text-chrome-dim text-center py-8 font-sans">No notes matches filter.</p>
           )}
         </div>
       </aside>
@@ -322,7 +277,7 @@ export default function Notes() {
               <select
                 value={activeNote.folder}
                 onChange={(e) => updateActiveNote('folder', e.target.value)}
-                className="bg-gunmetal border border-hairline rounded-full px-4 py-1.5 text-xs text-chrome outline-none font-mono"
+                className="bg-gunmetal border border-hairline rounded-full px-4 py-1.5 text-xs text-chrome outline-none font-sans"
               >
                 {folders.map((f) => (
                   <option key={f} value={f}>
@@ -333,7 +288,7 @@ export default function Notes() {
 
               <button
                 onClick={() => setShowNewFolderModal(true)}
-                className="text-chrome-dim hover:text-signal text-xs flex items-center gap-1 font-mono transition-colors cursor-pointer"
+                className="text-chrome-dim hover:text-signal text-xs flex items-center gap-1 font-sans font-medium transition-colors cursor-pointer"
               >
                 <FolderPlus size={13} /> new folder
               </button>
@@ -343,7 +298,7 @@ export default function Notes() {
             <div className="flex items-center border border-hairline rounded-full p-0.5 bg-gunmetal">
               <button
                 onClick={() => setViewMode('edit')}
-                className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-sans font-medium flex items-center gap-1 transition-colors ${
                   viewMode === 'edit' ? 'bg-steel text-chrome' : 'text-chrome-dim hover:text-chrome'
                 }`}
               >
@@ -351,7 +306,7 @@ export default function Notes() {
               </button>
               <button
                 onClick={() => setViewMode('preview')}
-                className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-sans font-medium flex items-center gap-1 transition-colors ${
                   viewMode === 'preview' ? 'bg-steel text-chrome' : 'text-chrome-dim hover:text-chrome'
                 }`}
               >
@@ -359,7 +314,7 @@ export default function Notes() {
               </button>
               <button
                 onClick={() => setViewMode('split')}
-                className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-sans font-medium flex items-center gap-1 transition-colors ${
                   viewMode === 'split' ? 'bg-steel text-chrome' : 'text-chrome-dim hover:text-chrome'
                 }`}
               >
@@ -382,7 +337,7 @@ export default function Notes() {
                 value={activeNote.tags}
                 onChange={(e) => updateActiveNote('tags', e.target.value)}
                 placeholder="tags (comma separated, e.g. dfs, recursion)"
-                className="bg-transparent border-none outline-none flex-1 font-mono text-[11px] text-chrome-dim placeholder-chrome-dim/40"
+                className="bg-transparent border-none outline-none flex-1 font-sans text-xs text-chrome-dim placeholder-chrome-dim/40"
               />
             </div>
           </div>
@@ -395,7 +350,7 @@ export default function Notes() {
                 value={activeNote.content}
                 onChange={(e) => updateActiveNote('content', e.target.value)}
                 placeholder="# Type your markdown here..."
-                className={`flex-1 p-6 bg-transparent text-chrome font-mono text-xs border-none outline-none resize-none overflow-y-auto leading-relaxed scrollbar-thin ${
+                className={`flex-1 p-6 bg-transparent text-chrome font-sans text-xs border-none outline-none resize-none overflow-y-auto leading-relaxed scrollbar-thin ${
                   viewMode === 'split' ? 'border-r border-hairline/50' : ''
                 }`}
               />
@@ -404,15 +359,28 @@ export default function Notes() {
             {/* Markdown Preview Area */}
             {(viewMode === 'preview' || viewMode === 'split') && (
               <div
-                className="flex-1 p-6 overflow-y-auto leading-relaxed text-chrome-dim text-sm select-text scrollbar-thin"
+                className="flex-1 p-6 overflow-y-auto leading-relaxed text-chrome-dim text-sm select-text scrollbar-thin font-sans"
                 dangerouslySetInnerHTML={{ __html: parseMarkdown(activeNote.content) }}
               />
             )}
           </div>
         </main>
       ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs text-chrome-dim">No notes available. Create one to begin writing.</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 bg-void">
+          <div className="w-14 h-14 rounded-full bg-steel/80 border border-hairline flex items-center justify-center text-chrome-dim">
+            <FileText size={24} />
+          </div>
+          <h3 className="font-semibold text-sm text-chrome">No Note Selected</h3>
+          <p className="text-xs text-chrome-dim max-w-xs font-sans">
+            Create your first markdown note or select an existing note from the sidebar.
+          </p>
+          <button
+            onClick={handleCreateNote}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-chrome hover:opacity-90 text-void font-medium text-xs cursor-pointer transition-opacity"
+          >
+            <Plus size={13} />
+            Create note
+          </button>
         </div>
       )}
 
@@ -450,7 +418,7 @@ export default function Notes() {
                 </button>
                 <button
                   onClick={handleAddFolder}
-                  className="px-3 py-1.5 rounded bg-signal hover:bg-signal-dim text-white text-xs font-semibold"
+                  className="px-3 py-1.5 rounded-full bg-signal hover:opacity-90 text-void text-xs font-bold transition-opacity"
                 >
                   Create
                 </button>

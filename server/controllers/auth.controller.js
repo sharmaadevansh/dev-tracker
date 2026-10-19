@@ -49,7 +49,7 @@ export async function login(req, res, next) {
 
 export async function register(req, res, next) {
   try {
-    const { username = '', password = '', email = '' } = req.body
+    const { username = '', password = '', email = '', university = '' } = req.body
     const cleanUser = typeof username === 'string' ? username.trim().toLowerCase() : ''
     const cleanPass = typeof password === 'string' ? password.trim() : ''
 
@@ -73,12 +73,13 @@ export async function register(req, res, next) {
       username: cleanUser,
       password: cleanPass,
       email: typeof email === 'string' ? email.trim() : '',
+      university: typeof university === 'string' ? university.trim() : '',
     })
 
     const token = signJwtToken(newUser)
     res.status(201).json({
       ok: true,
-      user: { username: newUser.username, email: newUser.email },
+      user: { username: newUser.username, email: newUser.email, university: newUser.university },
       token,
     })
   } catch (err) {
@@ -90,6 +91,7 @@ export async function getCurrentUser(req, res) {
   res.json({
     username: req.user.username,
     email: req.user.email || '',
+    university: req.user.university || '',
     role: req.user.role || 'user',
     isPremium: !!req.user.isPremium,
   })
@@ -97,32 +99,29 @@ export async function getCurrentUser(req, res) {
 
 export async function updateCredentials(req, res, next) {
   try {
-    const { username = '', password = '' } = req.body
+    const { username = '', password = '', university = null } = req.body
     const cleanUser = typeof username === 'string' ? username.trim().toLowerCase() : ''
     const cleanPass = typeof password === 'string' ? password.trim() : ''
-
-    if (!cleanUser || !cleanPass) {
-      return res.status(400).json({ error: 'Username and password cannot be blank.' })
-    }
 
     if (isDbConnected() && req.user._id) {
       const user = await User.findById(req.user._id)
       if (!user) return res.status(404).json({ error: 'User not found.' })
 
-      user.username = cleanUser
-      user.password = cleanPass // Pre-save hook will hash it
+      if (cleanUser) user.username = cleanUser
+      if (cleanPass) user.password = cleanPass // Pre-save hook will hash it
+      if (university !== null) user.university = typeof university === 'string' ? university.trim() : user.university
       await user.save()
 
       const token = signJwtToken(user)
       return res.json({
-        user: { username: user.username },
+        user: { username: user.username, university: user.university },
         token,
       })
     }
 
     res.json({
-      user: { username: cleanUser },
-      token: signJwtToken({ id: 'fallback-id', username: cleanUser }),
+      user: { username: cleanUser || req.user.username, university: university || req.user.university || '' },
+      token: signJwtToken({ id: 'fallback-id', username: cleanUser || req.user.username }),
     })
   } catch (err) {
     next(err)

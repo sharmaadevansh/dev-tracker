@@ -33,7 +33,7 @@ async function persistPlatformStats(platform, handle, stats) {
       },
       { upsert: true, new: true }
     )
-  } catch (err) {
+  } catch {
     // Non-critical background persistence error
   }
 }
@@ -136,11 +136,11 @@ export async function getGithubData(username) {
         const html = reposRes.value.data
         const lis = html.match(/<li[^>]*itemprop="owns"[\s\S]*?<\/li>|<li[^>]*class="col-12[\s\S]*?<\/li>/gi) || []
         for (const li of lis) {
-          const nameMatch = li.match(/href="\/[^\/]+\/([^"/?#]+)"[^>]*itemprop="name codeRepository"/i)
+          const nameMatch = li.match(/href="\/[^/]+\/([^"/?#]+)"[^>]*itemprop="name codeRepository"/i)
           const descMatch = li.match(/itemprop="description">([\s\S]*?)<\/p>/i)
           const langMatch = li.match(/itemprop="programmingLanguage">([^<]+)<\/span>/i)
-          const starsMatch = li.match(/href="\/[^\/]+\/[^"]*\/stargazers"[^>]*>[\s\S]*?([0-9]+)/i)
-          const forksMatch = li.match(/href="\/[^\/]+\/[^"]*\/forks"[^>]*>[\s\S]*?([0-9]+)/i)
+          const starsMatch = li.match(/href="\/[^/]+\/[^"]*\/stargazers"[^>]*>[\s\S]*?([0-9]+)/i)
+          const forksMatch = li.match(/href="\/[^/]+\/[^"]*\/forks"[^>]*>[\s\S]*?([0-9]+)/i)
 
           if (nameMatch) {
             repos.push({
@@ -155,7 +155,7 @@ export async function getGithubData(username) {
           }
         }
       }
-    } catch (e) {
+    } catch {
       // Fallback safe
     }
   }
@@ -168,7 +168,7 @@ export async function getGithubData(username) {
       bio: 'Software Developer',
       followers: 0,
       following: 0,
-      publicRepos: repos.length || 1,
+      publicRepos: repos.length || 0,
       htmlUrl: `https://github.com/${username}`,
     }
   }
@@ -198,7 +198,7 @@ export async function getGithubData(username) {
       dayMap[m[1]] = m[2] === 'No' ? 0 : parseInt(m[2], 10)
     }
     if (Object.keys(dayMap).length > 0) contributions = dayMap
-  } catch (err) {
+  } catch {
     // Calendar optional
   }
 
@@ -292,7 +292,7 @@ export async function getLeetcodeData(username) {
         profile: {
           name: user.profile?.realName || username,
           avatar: user.profile?.userAvatar,
-          ranking: user.profile?.ranking || 120000,
+          ranking: user.profile?.ranking || 0,
           reputation: user.profile?.reputation || 0,
           about: user.profile?.aboutMe || '',
         },
@@ -301,9 +301,9 @@ export async function getLeetcodeData(username) {
           easySolved: easyItem.count || 0,
           mediumSolved: medItem.count || 0,
           hardSolved: hardItem.count || 0,
-          totalEasy: 820,
-          totalMedium: 1720,
-          totalHard: 750,
+          totalEasy: 0,
+          totalMedium: 0,
+          totalHard: 0,
           acceptanceRate: acceptRate,
         },
         contest: {
@@ -351,41 +351,41 @@ export async function getLeetcodeData(username) {
       profile: {
         name: profileData.name || username,
         avatar: profileData.avatar,
-        ranking: profileData.ranking || 120000,
+        ranking: profileData.ranking || 0,
         reputation: profileData.reputation || 0,
         about: profileData.about || '',
       },
       solved: {
-        totalSolved: solvedData.solvedProblem ?? 427,
-        easySolved: solvedData.easySolved ?? 214,
-        mediumSolved: solvedData.mediumSolved ?? 204,
-        hardSolved: solvedData.hardSolved ?? 9,
-        totalEasy: 820,
-        totalMedium: 1720,
-        totalHard: 750,
-        acceptanceRate: solvedData.acceptanceRate || 69.2,
+        totalSolved: solvedData.solvedProblem ?? 0,
+        easySolved: solvedData.easySolved ?? 0,
+        mediumSolved: solvedData.mediumSolved ?? 0,
+        hardSolved: solvedData.hardSolved ?? 0,
+        totalEasy: 0,
+        totalMedium: 0,
+        totalHard: 0,
+        acceptanceRate: solvedData.acceptanceRate || 0,
       },
       contest: {
-        rating: Math.round(contestData.contestRating || 1435),
-        globalRanking: contestData.contestGlobalRanking || 600000,
-        topPercentage: contestData.contestTopPercentage || 68.5,
-        attended: contestData.contestAttend || 9,
+        rating: Math.round(contestData.contestRating || 0),
+        globalRanking: contestData.contestGlobalRanking || 0,
+        topPercentage: contestData.contestTopPercentage || 0,
+        attended: contestData.contestAttend || 0,
       },
       calendar: {
         raw: parsedCalendar,
-        activeDays: Object.keys(parsedCalendar).length || 252,
+        activeDays: Object.keys(parsedCalendar).length || 0,
       },
     }
 
     setCached(cacheKey, result)
     persistPlatformStats('leetcode', username, result)
     return result
-  } catch (err) {
+  } catch {
     const fallback = {
-      profile: { name: username },
-      solved: { totalSolved: 427, easySolved: 214, mediumSolved: 204, hardSolved: 9, acceptanceRate: 69.2 },
-      contest: { rating: 1435, globalRanking: 600809 },
-      calendar: { raw: {}, activeDays: 252 },
+      profile: { name: username, ranking: 0, reputation: 0, about: '' },
+      solved: { totalSolved: 0, easySolved: 0, mediumSolved: 0, hardSolved: 0, totalEasy: 0, totalMedium: 0, totalHard: 0, acceptanceRate: 0 },
+      contest: { rating: 0, globalRanking: 0, topPercentage: 0, attended: 0 },
+      calendar: { raw: {}, activeDays: 0 },
       isFallback: true,
     }
     setCached(cacheKey, fallback)
@@ -401,15 +401,38 @@ export async function getCodeforcesData(handle) {
   if (cached) return cached
 
   try {
-    const [infoRes, ratingRes] = await Promise.allSettled([
+    const [infoRes, ratingRes, statusRes] = await Promise.allSettled([
       axios.get(`https://codeforces.com/api/user.info`, { params: { handles: handle }, timeout: 8000 }),
       axios.get(`https://codeforces.com/api/user.rating`, { params: { handle }, timeout: 8000 }),
+      axios.get(`https://codeforces.com/api/user.status`, { params: { handle, from: 1, count: 500 }, timeout: 8000 }),
     ])
 
     const infoData = infoRes.status === 'fulfilled' && infoRes.value.data?.status === 'OK' ? infoRes.value.data.result[0] : null
     const ratingData = ratingRes.status === 'fulfilled' && ratingRes.value.data?.status === 'OK' ? ratingRes.value.data.result : []
+    const statusData = statusRes.status === 'fulfilled' && statusRes.value.data?.status === 'OK' ? statusRes.value.data.result : []
 
     if (!infoData) throw new Error('Codeforces user not found')
+
+    // Construct submission activity heatmap data & calculate unique solved count
+    const submissionDates = {}
+    const solvedSet = new Set()
+
+    if (Array.isArray(statusData)) {
+      for (const item of statusData) {
+        if (item.creationTimeSeconds) {
+          const day = new Date(item.creationTimeSeconds * 1000).toISOString().slice(0, 10)
+          submissionDates[day] = (submissionDates[day] || 0) + 1
+        }
+        if (item.verdict === 'OK' && item.problem) {
+          const problemKey = `${item.problem.contestId || ''}-${item.problem.index || ''}`
+          if (problemKey !== '-') {
+            solvedSet.add(problemKey)
+          }
+        }
+      }
+    }
+
+    const calculatedSolved = solvedSet.size > 0 ? solvedSet.size : (ratingData.length ? ratingData.length * 4 : 0)
 
     const result = {
       profile: {
@@ -431,17 +454,19 @@ export async function getCodeforcesData(handle) {
           year: '2-digit',
         }),
       })),
-      solvedCount: ratingData.length ? ratingData.length * 4 : 0,
+      solvedCount: calculatedSolved,
+      submissionDates,
     }
 
     setCached(cacheKey, result)
     persistPlatformStats('codeforces', handle, result)
     return result
-  } catch (err) {
+  } catch {
     const fallback = {
-      profile: { handle, rating: 1740, maxRating: 1820, rank: 'expert', maxRank: 'candidate master' },
+      profile: { handle, rating: 0, maxRating: 0, rank: 'unrated', maxRank: 'unrated' },
       ratingHistory: [],
-      solvedCount: 184,
+      solvedCount: 0,
+      submissionDates: {},
       isFallback: true,
     }
     return fallback
@@ -483,30 +508,30 @@ export async function getCodechefData(username) {
 
     const result = {
       username,
-      rating: rating || 1650,
-      highestRating: highestRating || 1720,
+      rating: rating || 0,
+      highestRating: highestRating || rating || 0,
       stars: `${starsCount}★`,
       starsCount,
       division: rating >= 2000 ? 'Div 1' : rating >= 1600 ? 'Div 2' : 'Div 3',
-      globalRank: globalRankMatch ? globalRankMatch[1] : '14,200',
-      countryRank: countryRankMatch ? countryRankMatch[1] : '8,450',
-      countryName: 'India',
+      globalRank: globalRankMatch ? globalRankMatch[1] : 'Unranked',
+      countryRank: countryRankMatch ? countryRankMatch[1] : 'Unranked',
+      countryName: 'Global',
     }
 
     setCached(cacheKey, result)
     persistPlatformStats('codechef', username, result)
     return result
-  } catch (err) {
+  } catch {
     const fallback = {
       username,
-      rating: 1650,
-      highestRating: 1720,
-      stars: '3★',
-      starsCount: 3,
-      division: 'Div 2',
-      globalRank: '14,200',
-      countryRank: '8,450',
-      countryName: 'India',
+      rating: 0,
+      highestRating: 0,
+      stars: '1★',
+      starsCount: 1,
+      division: 'Div 3',
+      globalRank: 'Unranked',
+      countryRank: 'Unranked',
+      countryName: 'Global',
       isFallback: true,
     }
     return fallback
@@ -534,24 +559,24 @@ export async function getGfgData(username) {
 
     const result = {
       userName: username,
-      codingScore: scoreMatch ? parseInt(scoreMatch[1], 10) : 240,
-      totalProblemsSolved: solvedMatch ? parseInt(solvedMatch[1], 10) : 85,
-      institute: instituteMatch ? instituteMatch[1].trim() : 'Developer Community',
-      currentStreak: streakMatch ? parseInt(streakMatch[1], 10) : 7,
-      instituteRank: 'Top 10%',
+      codingScore: scoreMatch ? parseInt(scoreMatch[1], 10) : 0,
+      totalProblemsSolved: solvedMatch ? parseInt(solvedMatch[1], 10) : 0,
+      institute: instituteMatch ? instituteMatch[1].trim() : '',
+      currentStreak: streakMatch ? parseInt(streakMatch[1], 10) : 0,
+      instituteRank: 'Unranked',
     }
 
     setCached(cacheKey, result)
     persistPlatformStats('gfg', username, result)
     return result
-  } catch (err) {
+  } catch {
     const fallback = {
       userName: username,
-      codingScore: 240,
-      totalProblemsSolved: 85,
-      institute: 'Developer Community',
-      currentStreak: 7,
-      instituteRank: 'Top 15%',
+      codingScore: 0,
+      totalProblemsSolved: 0,
+      institute: '',
+      currentStreak: 0,
+      instituteRank: 'Unranked',
       isFallback: true,
     }
     return fallback

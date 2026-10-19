@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ExternalLink, X } from 'lucide-react'
 import Heatmap from '../components/Heatmap'
+import { useAuth } from '../context/AuthContext'
+import { getScopedItem, setScopedItem } from '../utils/storage'
 import {
   createCollectionItem,
   deleteCollectionItem,
@@ -10,7 +12,7 @@ import {
   updateCollectionItem,
 } from '../services/api/backend'
 
-const STORAGE_KEY = 'devtrack_projects'
+const PROJECTS_STORAGE_KEY = 'projects'
 
 const STATUS_OPTIONS = ['Planned', 'In Progress', 'Completed', 'On Hold']
 const PRIORITY_OPTIONS = ['Low', 'Medium', 'High']
@@ -20,15 +22,6 @@ const STATUS_COLOR = {
   'In Progress': 'text-signal-dim border-signal/20 bg-signal/5 glow-cyan',
   Completed: 'text-violet-dim border-violet/20 bg-violet/5 glow-violet',
   'On Hold': 'text-yellow-dim border-yellow/20 bg-yellow/5',
-}
-
-function loadProjects() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
 }
 
 function emptyProject() {
@@ -43,26 +36,29 @@ function emptyProject() {
     startDate: '',
     deadline: '',
     priority: 'Medium',
+    updatedAt: new Date().toISOString(),
   }
 }
 
 export default function Projects() {
+  const { user } = useAuth()
+  const username = user?.username || ''
   const queryClient = useQueryClient()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [draft, setDraft] = useState(emptyProject())
   const [editingId, setEditingId] = useState(null)
 
   const { data: remoteProjects, isLoading, isError } = useQuery({
-    queryKey: ['backend-projects'],
+    queryKey: ['backend-projects', username],
     queryFn: () => fetchCollection('projects'),
-    initialData: loadProjects,
+    initialData: () => getScopedItem(PROJECTS_STORAGE_KEY, username, []),
   })
 
-  const projects = remoteProjects || []
+  const projects = useMemo(() => remoteProjects || [], [remoteProjects])
 
   const syncProjectsCache = (nextProjects) => {
-    queryClient.setQueryData(['backend-projects'], nextProjects)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProjects))
+    queryClient.setQueryData(['backend-projects', username], nextProjects)
+    setScopedItem(PROJECTS_STORAGE_KEY, username, nextProjects)
   }
 
   const createMutation = useMutation({
@@ -107,19 +103,28 @@ export default function Projects() {
     deleteMutation.mutate(id)
   }
 
-  const update = (key, value) => setDraft((d) => ({ ...d, [key]: value }))
+  const update = (key, value) => setDraft((d) => ({ ...d, [key]: value, updatedAt: new Date().toISOString() }))
+
+  const projectActivityData = useMemo(() => {
+    const map = {}
+    projects.forEach((p) => {
+      const d = (p.updatedAt || p.startDate || p.deadline || '').slice(0, 10) || new Date().toISOString().slice(0, 10)
+      map[d] = (map[d] || 0) + 1
+    })
+    return map
+  }, [projects])
 
   return (
-    <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="flex-1 px-4 sm:px-8 md:px-12 py-6 sm:py-8 max-w-7xl mx-auto w-full overflow-y-auto space-y-6 scrollbar-thin">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-chrome">Projects</h1>
-          {isError && <p className="text-xs text-signal font-mono mt-1">Backend sync unavailable. Showing local cache.</p>}
-          {isLoading && <p className="text-xs text-chrome-dim font-mono mt-1">Loading projects from backend...</p>}
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-chrome">Projects</h1>
+          {isError && <p className="text-xs text-signal font-sans mt-1">Backend sync unavailable. Showing local cache.</p>}
+          {isLoading && <p className="text-xs text-chrome-dim font-sans mt-1">Loading projects from backend...</p>}
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 bg-gradient-to-r from-signal to-violet hover:opacity-90 transition-all text-void font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-full cursor-pointer hover:shadow-[0_0_12px_rgba(0,0,0,0.26)]"
+          className="flex items-center gap-2 bg-chrome text-void hover:opacity-90 font-medium text-xs px-3.5 py-2 rounded-lg transition-opacity cursor-pointer"
         >
           <Plus size={14} />
           New project
@@ -128,58 +133,88 @@ export default function Projects() {
 
       {/* Project updates heatmap */}
       {projects.length > 0 && (
-        <div className="glass rounded-[36px] p-6 mb-6 bg-gunmetal/30 border-hairline flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="glass p-5 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h3 className="font-display font-semibold text-xs text-chrome">Project Commit Pipeline</h3>
-            <p className="text-[10px] text-chrome-dim mt-0.5 font-mono">Traces codebase revisions and recent active runs</p>
+            <h3 className="font-semibold text-sm text-chrome">Project Commit Pipeline</h3>
+            <p className="text-xs text-chrome-dim mt-0.5 font-sans">Traces codebase revisions and recent active runs</p>
           </div>
           <div className="flex shrink-0 items-center justify-center">
-            <Heatmap rows={7} cols={4} lastActiveDayIndex={27} />
+            <Heatmap rows={7} cols={4} data={projectActivityData} colorScheme="violet" label="updates" />
           </div>
         </div>
       )}
 
       {projects.length === 0 ? (
-        <div className="glass rounded-[36px] p-8 text-center bg-gunmetal/30 border-hairline">
-          <p className="text-chrome-dim text-sm">No projects tracked yet. Add your first one.</p>
+        <div className="glass p-10 text-center flex flex-col items-center justify-center space-y-4 my-6">
+          <div className="w-12 h-12 rounded-lg bg-steel flex items-center justify-center text-chrome">
+            <Plus size={20} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-semibold text-chrome text-base">No Projects Tracked Yet</h3>
+            <p className="text-xs text-chrome-dim font-sans max-w-sm leading-relaxed">
+              Document your full-stack applications, repositories, tech stacks, and live deployments to build a recruiter-ready portfolio.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setDraft(emptyProject())
+              setEditingId(null)
+              setIsFormOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-chrome text-void font-medium text-xs font-sans hover:opacity-90 cursor-pointer transition-opacity"
+          >
+            <Plus size={14} />
+            Track first project
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {projects.map((p) => (
             <motion.div
               key={p.id}
               layout
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass rounded-[36px] p-6 flex flex-col gap-3.5 cursor-pointer hover:border-signal hover:shadow-[0_0_15px_rgba(0,0,0,0.24)] transition-all duration-300 bg-gunmetal/30"
+              className="glass p-5 flex flex-col justify-between gap-3.5 cursor-pointer hover:border-chrome/20 transition-colors"
               onClick={() => openEdit(p)}
             >
-              <div className="flex items-start justify-between gap-2">
-                <span className="font-display font-semibold text-chrome">{p.name}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete(p.id)
-                  }}
-                  className="text-chrome-dim hover:text-signal transition-colors shrink-0 cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-              {p.description && <p className="text-xs text-chrome-dim line-clamp-2 leading-relaxed">{p.description}</p>}
+              <div>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-semibold text-chrome text-sm sm:text-base">{p.name}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(p.id)
+                    }}
+                    className="text-chrome-dim hover:text-red-400 transition-colors shrink-0 cursor-pointer p-1"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                {p.description && <p className="text-xs text-chrome-dim line-clamp-2 leading-relaxed mt-1 font-sans">{p.description}</p>}
 
-              <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                <span className={`text-[9px] uppercase tracking-wider border rounded-full px-2.5 py-0.5 font-bold ${STATUS_COLOR[p.status]}`}>
-                  {p.status}
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-chrome-dim border border-hairline rounded-full px-2.5 py-0.5 font-mono">
-                  {p.priority} priority
-                </span>
-              </div>
+                <div className="flex items-center gap-2 flex-wrap mt-2.5">
+                  <span className={`text-[11px] border rounded-md px-2 py-0.5 font-medium font-sans ${STATUS_COLOR[p.status]}`}>
+                    {p.status}
+                  </span>
+                  <span className="text-[11px] text-chrome-dim border border-hairline rounded-md px-2 py-0.5 font-sans font-medium">
+                    {p.priority} priority
+                  </span>
+                </div>
 
-              {p.techStack && (
-                <p className="text-[11px] font-mono text-chrome-dim mt-2">{p.techStack}</p>
-              )}
+                {p.techStack && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {p.techStack.split(',').filter(Boolean).map((tech) => (
+                      <span
+                        key={tech.trim()}
+                        className="text-[10px] font-sans font-medium px-2 py-0.5 rounded-md bg-steel/70 text-chrome border border-hairline/60"
+                      >
+                        {tech.trim()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center gap-3 mt-3 pt-3 border-t border-hairline/40">
                 {p.githubLink && (
@@ -188,7 +223,7 @@ export default function Projects() {
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="text-xs text-chrome-dim hover:text-signal flex items-center gap-1 font-mono transition-colors"
+                    className="text-xs text-chrome-dim hover:text-signal flex items-center gap-1 font-sans font-medium transition-colors"
                   >
                     Repo <ExternalLink size={11} />
                   </a>
@@ -199,13 +234,13 @@ export default function Projects() {
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="text-xs text-chrome-dim hover:text-signal flex items-center gap-1 font-mono transition-colors"
+                    className="text-xs text-chrome-dim hover:text-signal flex items-center gap-1 font-sans font-medium transition-colors"
                   >
                     Live <ExternalLink size={11} />
                   </a>
                 )}
                 {p.deadline && (
-                  <span className="text-[11px] text-chrome-dim ml-auto font-mono">
+                  <span className="text-xs text-chrome-dim ml-auto font-sans">
                     due {p.deadline}
                   </span>
                 )}
@@ -247,72 +282,72 @@ export default function Projects() {
                 value={draft.name}
                 onChange={(e) => update('name', e.target.value)}
                 placeholder="Project name"
-                className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal"
+                className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal font-sans"
               />
               <textarea
                 value={draft.description}
                 onChange={(e) => update('description', e.target.value)}
                 placeholder="Short description"
                 rows={2}
-                className="bg-steel border border-hairline rounded-[20px] px-4 py-3 text-xs outline-none focus:border-signal resize-none leading-relaxed"
+                className="bg-steel border border-hairline rounded-[20px] px-4 py-3 text-xs outline-none focus:border-signal resize-none leading-relaxed font-sans"
               />
               <input
                 value={draft.techStack}
                 onChange={(e) => update('techStack', e.target.value)}
                 placeholder="Tech stack (comma separated)"
-                className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs font-mono outline-none focus:border-signal"
+                className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs font-sans outline-none focus:border-signal"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={draft.githubLink}
                   onChange={(e) => update('githubLink', e.target.value)}
                   placeholder="GitHub link"
-                  className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal"
+                  className="bg-steel/60 hover:bg-steel border border-hairline focus:border-chrome-dim rounded-lg px-3 py-2 text-xs outline-none transition-colors"
                 />
                 <input
                   value={draft.liveLink}
                   onChange={(e) => update('liveLink', e.target.value)}
                   placeholder="Live link"
-                  className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal"
+                  className="bg-steel/60 hover:bg-steel border border-hairline focus:border-chrome-dim rounded-lg px-3 py-2 text-xs outline-none transition-colors"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase tracking-widest text-chrome-dim font-bold font-mono">Start date</label>
+                  <label className="text-xs font-medium text-chrome-dim">Start date</label>
                   <input
                     type="date"
                     value={draft.startDate}
                     onChange={(e) => update('startDate', e.target.value)}
-                    className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal text-chrome-dim"
+                    className="bg-steel/60 hover:bg-steel border border-hairline focus:border-chrome-dim rounded-lg px-3 py-2 text-xs outline-none text-chrome transition-colors"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase tracking-widest text-chrome-dim font-bold font-mono">Deadline</label>
+                  <label className="text-xs font-medium text-chrome-dim">Deadline</label>
                   <input
                     type="date"
                     value={draft.deadline}
                     onChange={(e) => update('deadline', e.target.value)}
-                    className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal text-chrome-dim"
+                    className="bg-steel/60 hover:bg-steel border border-hairline focus:border-chrome-dim rounded-lg px-3 py-2 text-xs outline-none text-chrome transition-colors"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase tracking-widest text-chrome-dim font-bold font-mono">Status</label>
+                  <label className="text-xs font-medium text-chrome-dim">Status</label>
                   <select
                     value={draft.status}
                     onChange={(e) => update('status', e.target.value)}
-                    className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal text-chrome-dim"
+                    className="bg-steel/60 hover:bg-steel border border-hairline focus:border-chrome-dim rounded-lg px-3 py-2 text-xs outline-none text-chrome transition-colors"
                   >
                     {STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase tracking-widest text-chrome-dim font-bold font-mono">Priority</label>
+                  <label className="text-xs font-medium text-chrome-dim">Priority</label>
                   <select
                     value={draft.priority}
                     onChange={(e) => update('priority', e.target.value)}
-                    className="bg-steel border border-hairline rounded-full px-4 py-2 text-xs outline-none focus:border-signal text-chrome-dim"
+                    className="bg-steel/60 hover:bg-steel border border-hairline focus:border-chrome-dim rounded-lg px-3 py-2 text-xs outline-none text-chrome transition-colors"
                   >
                     {PRIORITY_OPTIONS.map((p) => <option key={p}>{p}</option>)}
                   </select>
@@ -321,7 +356,7 @@ export default function Projects() {
 
               <button
                 type="submit"
-                className="mt-2 bg-gradient-to-r from-signal to-violet hover:opacity-90 transition-all text-void font-bold text-xs uppercase tracking-wider py-3.5 rounded-full cursor-pointer hover:shadow-[0_0_12px_rgba(0,0,0,0.26)]"
+                className="mt-2 bg-chrome text-void hover:opacity-90 transition-opacity font-medium text-xs py-2.5 rounded-lg cursor-pointer"
               >
                 {editingId ? 'Save changes' : 'Add project'}
               </button>

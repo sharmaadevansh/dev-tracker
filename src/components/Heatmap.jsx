@@ -91,7 +91,7 @@ export default function Heatmap({
         return {
           activeBorder: 'border-yellow',
           ring: 'ring-yellow/40',
-          pulseClass: 'bg-yellow border-2 border-yellow ring-2 ring-yellow/40 led-pulse scale-110 shadow-[0_0_12px_rgba(255,223,130,0.5)]',
+          pulseClass: 'bg-yellow border-2 border-yellow ring-2 ring-yellow/40 led-pulse scale-110 shadow-[0_0_12px_rgba(255,213,61,0.5)]',
           c1: 'bg-yellow/20 border border-yellow/20',
           c2: 'bg-yellow/45 border border-yellow/30',
           c3: 'bg-yellow/70 border border-yellow/40',
@@ -103,7 +103,7 @@ export default function Heatmap({
         return {
           activeBorder: 'border-violet',
           ring: 'ring-violet/40',
-          pulseClass: 'bg-violet border-2 border-violet ring-2 ring-violet/40 led-pulse scale-110 shadow-[0_0_12px_rgba(153,194,255,0.5)]',
+          pulseClass: 'bg-violet border-2 border-violet ring-2 ring-violet/40 led-pulse scale-110 shadow-[0_0_12px_rgba(140,99,255,0.5)]',
           c1: 'bg-violet/20 border border-violet/20',
           c2: 'bg-violet/45 border border-violet/30',
           c3: 'bg-violet/70 border border-violet/40',
@@ -113,22 +113,22 @@ export default function Heatmap({
         }
       case 'green':
         return {
-          activeBorder: 'border-green-500',
-          ring: 'ring-green-500/40',
-          pulseClass: 'bg-green-500 border-2 border-green-500 ring-2 ring-green-500/40 led-pulse scale-110 shadow-[0_0_12px_rgba(74,222,128,0.5)]',
-          c1: 'bg-green-500/20 border border-green-500/20',
-          c2: 'bg-green-500/45 border border-green-500/30',
-          c3: 'bg-green-500/70 border border-green-500/40',
-          c4: 'bg-green-500 border border-green-500/50',
-          legendBg: 'bg-green-500',
-          legendText: 'text-green-400 font-bold',
+          activeBorder: 'border-signal',
+          ring: 'ring-signal/40',
+          pulseClass: 'bg-signal border-2 border-signal ring-2 ring-signal/40 led-pulse scale-110 shadow-[0_0_12px_rgba(184,242,47,0.5)]',
+          c1: 'bg-signal/20 border border-signal/15',
+          c2: 'bg-signal/45 border border-signal/30',
+          c3: 'bg-signal/70 border border-signal/45',
+          c4: 'bg-signal border border-signal/60',
+          legendBg: 'bg-signal',
+          legendText: 'text-signal-dim font-bold',
         }
       case 'signal':
       default:
         return {
           activeBorder: 'border-signal',
           ring: 'ring-signal/40',
-          pulseClass: 'bg-signal border-2 border-signal ring-2 ring-signal/40 led-pulse scale-110 shadow-[0_0_12px_rgba(255,132,186,0.5)]',
+          pulseClass: 'bg-signal border-2 border-signal ring-2 ring-signal/40 led-pulse scale-110 shadow-[0_0_12px_rgba(184,242,47,0.5)]',
           c1: 'bg-signal/20 border border-signal/15',
           c2: 'bg-signal/45 border border-signal/30',
           c3: 'bg-signal/70 border border-signal/45',
@@ -151,10 +151,10 @@ export default function Heatmap({
   }
 
   return (
-    <div className="flex flex-col gap-2 font-mono w-full">
+    <div className="flex flex-col gap-2 font-sans w-full">
       <div className="flex items-start gap-2.5 overflow-x-auto scrollbar-none pb-1">
         {/* Day Labels */}
-        <div className="flex flex-col justify-between text-[9px] text-chrome-dim/75 h-[105px] py-1 select-none font-bold shrink-0">
+        <div className="flex flex-col justify-between text-[11px] text-chrome-dim/75 h-[105px] py-0.5 select-none font-semibold shrink-0">
           <span>Mon</span>
           <span>Wed</span>
           <span>Fri</span>
@@ -178,9 +178,9 @@ export default function Heatmap({
       </div>
 
       {/* Legend & Stats */}
-      <div className="flex items-center justify-between text-[9px] text-chrome-dim/75 mt-1 select-none font-semibold">
-        <span className="text-[10px] font-mono text-chrome-dim">
-          Total tracked: <strong className="text-chrome">{totalActivity}</strong> {label}
+      <div className="flex items-center justify-between text-[11px] text-chrome-dim/75 mt-1 select-none font-medium">
+        <span className="text-[11px] font-sans text-chrome-dim">
+          Total tracked: <strong className="text-chrome font-display tabular-nums">{totalActivity}</strong> {label}
         </span>
 
         <div className="flex items-center gap-1.5 justify-end">

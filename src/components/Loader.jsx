@@ -9,7 +9,7 @@ export function CardSkeleton() {
 
 export function InlineSpinner({ label = 'Syncing' }) {
   return (
-    <div className="flex items-center gap-2 text-xs text-chrome-dim font-mono">
+    <div className="flex items-center gap-2 text-xs text-chrome-dim font-sans font-medium">
       <span className="w-1.5 h-1.5 rounded-full bg-signal led-pulse" />
       {label}...
     </div>

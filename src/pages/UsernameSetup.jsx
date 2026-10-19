@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Code2, GraduationCap, ArrowRight, Swords, ChefHat, Check, Zap, Eye, EyeOff } from 'lucide-react'
+import { Code2, GraduationCap, ArrowRight, Swords, ChefHat, Zap } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '../components/BrandIcons'
 import { useUserHandles } from '../context/UserContext'
 
@@ -11,20 +11,20 @@ const platforms = [
     label: 'Codeforces',
     tagline: 'Competitive ratings, contests, rank & problem solving stats',
     icon: Swords,
-    placeholder: 'toutsit',
+    placeholder: 'e.g. tourist',
     color: 'text-violet',
     accentBorder: 'border-violet/40',
-    activeGlow: 'shadow-[0_0_15px_rgba(153,194,255,0.2)]',
+    activeGlow: 'shadow-[0_0_15px_rgba(140,99,255,0.15)]',
   },
   {
     key: 'codechef',
     label: 'CodeChef',
     tagline: 'Stars rating (1★-7★), division ranking & contest performance',
     icon: ChefHat,
-    placeholder: 'toutsit',
+    placeholder: 'e.g. chef_user',
     color: 'text-yellow',
     accentBorder: 'border-yellow/40',
-    activeGlow: 'shadow-[0_0_15px_rgba(255,223,130,0.2)]',
+    activeGlow: 'shadow-[0_0_15px_rgba(255,213,61,0.15)]',
   },
   {
     key: 'leetcode',
@@ -34,7 +34,7 @@ const platforms = [
     placeholder: 'leetcode_user',
     color: 'text-yellow',
     accentBorder: 'border-yellow/40',
-    activeGlow: 'shadow-[0_0_15px_rgba(255,223,130,0.2)]',
+    activeGlow: 'shadow-[0_0_15px_rgba(255,213,61,0.15)]',
   },
   {
     key: 'github',
@@ -42,9 +42,9 @@ const platforms = [
     tagline: 'Public repositories, star count, language stack & contributions',
     icon: GithubIcon,
     placeholder: 'octocat',
-    color: 'text-signal',
+    color: 'text-signal-dim',
     accentBorder: 'border-signal/40',
-    activeGlow: 'shadow-[0_0_15px_rgba(255,132,186,0.2)]',
+    activeGlow: 'shadow-[0_0_15px_rgba(184,242,47,0.15)]',
   },
   {
     key: 'gfg',
@@ -52,9 +52,9 @@ const platforms = [
     tagline: 'Institute rank, coding score, problem solving streaks',
     icon: GraduationCap,
     placeholder: 'gfg_user',
-    color: 'text-green-600',
-    accentBorder: 'border-green-500/40',
-    activeGlow: 'shadow-[0_0_15px_rgba(74,222,128,0.2)]',
+    color: 'text-signal-dim',
+    accentBorder: 'border-signal/40',
+    activeGlow: 'shadow-[0_0_15px_rgba(184,242,47,0.15)]',
   },
   {
     key: 'linkedin',
@@ -64,14 +64,15 @@ const platforms = [
     placeholder: 'in/your-name',
     color: 'text-violet',
     accentBorder: 'border-violet/40',
-    activeGlow: 'shadow-[0_0_15px_rgba(153,194,255,0.2)]',
+    activeGlow: 'shadow-[0_0_15px_rgba(140,99,255,0.15)]',
   },
 ]
 
 export default function UsernameSetup() {
-  const { handles, activePlatforms, setHandles } = useUserHandles()
+  const { handles, activePlatforms, university, setHandles } = useUserHandles()
   const [formHandles, setFormHandles] = useState(handles)
   const [formPlatforms, setFormPlatforms] = useState(activePlatforms)
+  const [formUniversity, setFormUniversity] = useState(university || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -84,6 +85,10 @@ export default function UsernameSetup() {
   useEffect(() => {
     setFormPlatforms(activePlatforms)
   }, [activePlatforms])
+
+  useEffect(() => {
+    setFormUniversity(university || '')
+  }, [university])
 
   const updateHandle = (key, value) => {
     setFormHandles((prev) => ({ ...prev, [key]: value }))
@@ -118,7 +123,7 @@ export default function UsernameSetup() {
     setError('')
     setSuccess('')
 
-    const result = await setHandles(formHandles, formPlatforms)
+    const result = await setHandles(formHandles, formPlatforms, formUniversity)
     setSaving(false)
 
     if (result && !result.ok) {
@@ -126,9 +131,9 @@ export default function UsernameSetup() {
       return
     }
 
-    setSuccess('Platform settings and handles saved successfully!')
+    setSuccess('Platform settings and university affiliation saved successfully!')
     setTimeout(() => {
-      navigate('/dashboard/analytics')
+      navigate('/dashboard')
     }, 800)
   }
 
@@ -148,7 +153,7 @@ export default function UsernameSetup() {
             <h1 className="font-display text-2xl font-semibold text-chrome flex items-center gap-2.5">
               Platform & Handle Manager
             </h1>
-            <p className="text-xs text-chrome-dim mt-1 font-mono">
+            <p className="text-xs text-chrome-dim mt-1 font-sans">
               Toggle specific platforms to turn their stats streams ON/OFF across the app.
             </p>
           </div>
@@ -158,21 +163,21 @@ export default function UsernameSetup() {
             <button
               type="button"
               onClick={() => handleToggleAll(true)}
-              className="px-3 py-1.5 rounded-full text-[11px] font-mono bg-steel/60 hover:bg-steel border border-hairline text-chrome-dim hover:text-chrome transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full text-[11px] font-sans font-medium bg-steel/60 hover:bg-steel border border-hairline text-chrome-dim hover:text-chrome transition-colors cursor-pointer"
             >
               All ON
             </button>
             <button
               type="button"
               onClick={handleToggleCompetitive}
-              className="px-3 py-1.5 rounded-full text-[11px] font-mono bg-steel/60 hover:bg-steel border border-hairline text-signal-dim hover:text-signal transition-colors cursor-pointer flex items-center gap-1"
+              className="px-3 py-1.5 rounded-full text-[11px] font-sans font-medium bg-steel/60 hover:bg-steel border border-hairline text-signal-dim hover:text-signal transition-colors cursor-pointer flex items-center gap-1"
             >
-              <Zap size={10} /> Competitive
+              <Zap size={11} /> Competitive
             </button>
             <button
               type="button"
               onClick={() => handleToggleAll(false)}
-              className="px-3 py-1.5 rounded-full text-[11px] font-mono bg-steel/60 hover:bg-steel border border-hairline text-chrome-dim/60 hover:text-chrome transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full text-[11px] font-sans font-medium bg-steel/60 hover:bg-steel border border-hairline text-chrome-dim/60 hover:text-chrome transition-colors cursor-pointer"
             >
               All OFF
             </button>
@@ -181,6 +186,28 @@ export default function UsernameSetup() {
 
         {/* Platform Cards Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* University Affiliation Card */}
+          <div className="glass rounded-[24px] p-5 border border-violet/30 bg-gunmetal/40 shadow-sm space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-violet/15 border border-violet/30 flex items-center justify-center text-violet">
+                <GraduationCap size={16} />
+              </div>
+              <div>
+                <span className="font-display font-bold text-sm text-chrome">Aspirant University / Institute</span>
+                <p className="text-[11px] text-chrome-dim font-sans">
+                  Used to calculate your campus-wide ranking on local university leaderboards.
+                </p>
+              </div>
+            </div>
+            <input
+              type="text"
+              value={formUniversity}
+              onChange={(e) => setFormUniversity(e.target.value)}
+              placeholder="e.g. Delhi Technological University, IIT Bombay, Stanford..."
+              className="w-full text-xs font-sans py-2.5 px-4 bg-void border border-hairline rounded-xl text-chrome outline-none focus:border-violet/60"
+            />
+          </div>
+
           <div className="grid grid-cols-1 gap-3.5">
             {platforms.map(({ key, label, tagline, icon: Icon, placeholder, color, accentBorder, activeGlow }) => {
               const isActive = !!formPlatforms[key]
@@ -208,17 +235,11 @@ export default function UsernameSetup() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-display font-bold text-sm text-chrome">{label}</span>
-                          <span
-                            className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded-full font-semibold ${
-                              isActive
-                                ? 'bg-green-500/10 text-green-600 border border-green-500/30'
-                                : 'bg-steel/50 text-chrome-dim/60 border border-hairline/30'
-                            }`}
-                          >
+                          <span className={isActive ? 'badge-base badge-signal' : 'badge-base badge-neutral'}>
                             {isActive ? 'Active' : 'Disabled'}
                           </span>
                         </div>
-                        <p className="text-[10px] text-chrome-dim/80 font-mono mt-0.5">{tagline}</p>
+                        <p className="text-[11px] text-chrome-dim/80 font-sans mt-0.5">{tagline}</p>
                       </div>
                     </div>
 
@@ -242,7 +263,7 @@ export default function UsernameSetup() {
                   {/* Handle Input Field (shown when active) */}
                   {isActive ? (
                     <div className="pt-2 border-t border-hairline/30 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                      <label className="text-[10px] uppercase font-mono tracking-wider text-chrome-dim shrink-0">
+                      <label className="text-[11px] uppercase font-sans font-semibold tracking-wider text-chrome-dim shrink-0">
                         Profile Handle:
                       </label>
                       <div className="relative flex-1">
@@ -250,17 +271,17 @@ export default function UsernameSetup() {
                           value={formHandles[key] || ''}
                           onChange={(e) => updateHandle(key, e.target.value)}
                           placeholder={placeholder}
-                          className="w-full bg-steel/70 border border-hairline rounded-full px-4 py-2 text-xs font-mono text-chrome outline-none focus:border-signal transition-colors"
+                          className="w-full bg-steel/70 border border-hairline rounded-full px-4 py-2 text-xs font-sans text-chrome outline-none focus:border-signal focus:ring-2 focus:ring-signal/20 transition-all"
                         />
                       </div>
                     </div>
                   ) : (
-                    <div className="pt-1.5 border-t border-hairline/20 flex items-center justify-between text-[10px] font-mono text-chrome-dim/60">
-                      <span>Stats stream deactivated for this platform.</span>
+                    <div className="pt-1.5 border-t border-hairline/20 flex items-center justify-between text-[11px] font-sans text-chrome-dim/60">
+                      <span>Sync disabled for this platform.</span>
                       <button
                         type="button"
                         onClick={() => togglePlatform(key)}
-                        className="text-signal-dim hover:underline cursor-pointer"
+                        className="text-signal-dim hover:underline cursor-pointer font-medium"
                       >
                         Enable
                       </button>
@@ -273,22 +294,22 @@ export default function UsernameSetup() {
 
           {/* Footer Action Bar */}
           <div className="glass rounded-[24px] p-4 bg-gunmetal/30 border border-hairline flex items-center justify-between mt-6">
-            <span className="text-xs text-chrome-dim font-mono">
-              <span className="text-signal font-bold">{activeCount}</span> of {platforms.length} platforms active
+            <span className="text-xs text-chrome-dim font-sans">
+              <span className="text-signal font-bold tabular-nums">{activeCount}</span> of {platforms.length} platforms active
             </span>
 
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 bg-gradient-to-r from-signal to-violet hover:opacity-90 transition-all text-void font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-full cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 bg-gradient-to-r from-signal to-violet hover:opacity-90 transition-all text-void font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-full cursor-pointer disabled:opacity-50 font-sans"
             >
               {saving ? 'Saving...' : 'Apply & View Analytics'}
               <ArrowRight size={14} />
             </button>
           </div>
 
-          {error && <p className="text-xs text-signal font-mono bg-signal/10 p-3 rounded-2xl border border-signal/20">{error}</p>}
-          {success && <p className="text-xs text-green-600 font-mono bg-green-500/10 p-3 rounded-2xl border border-green-500/20">{success}</p>}
+          {error && <p className="text-xs text-signal font-sans bg-signal/10 p-3 rounded-2xl border border-signal/20">{error}</p>}
+          {success && <p className="text-xs text-green-600 font-sans bg-green-500/10 p-3 rounded-2xl border border-green-500/20">{success}</p>}
         </form>
       </motion.div>
     </div>

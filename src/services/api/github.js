@@ -58,26 +58,7 @@ export async function fetchGithubRepos(username) {
     }))
   } catch (err) {
     console.warn('Direct GitHub API repos error (likely 403 rate limit):', err.message)
-    return [
-      {
-        name: 'dev-tracker',
-        description: 'Developer portfolio and competitive coding analytics dashboard',
-        language: 'JavaScript',
-        stars: 3,
-        forks: 1,
-        htmlUrl: `https://github.com/${username}/dev-tracker`,
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        name: 'portfolio',
-        description: 'Personal modern web portfolio showcase',
-        language: 'React',
-        stars: 2,
-        forks: 0,
-        htmlUrl: `https://github.com/${username}/portfolio`,
-        updatedAt: new Date().toISOString(),
-      },
-    ]
+    return []
   }
 }
 
@@ -117,10 +98,10 @@ export async function fetchGithubProfile(username) {
       login: username,
       name: username,
       avatar: `https://avatars.githubusercontent.com/${username}`,
-      bio: 'Software Developer',
+      bio: '',
       followers: 0,
       following: 0,
-      publicRepos: 12,
+      publicRepos: 0,
       createdAt: new Date().toISOString(),
       htmlUrl: `https://github.com/${username}`,
     }
@@ -169,7 +150,7 @@ export async function fetchGithubAll(username) {
     fetchContributionCalendar(username),
   ])
 
-  const profile = profileRes.status === 'fulfilled' ? profileRes.value : { login: username, name: username, publicRepos: 12 }
+  const profile = profileRes.status === 'fulfilled' ? profileRes.value : { login: username, name: username, publicRepos: 0 }
   const repos = reposRes.status === 'fulfilled' && Array.isArray(reposRes.value) ? reposRes.value : []
   const contributions = contribRes.status === 'fulfilled' ? contribRes.value : null
 

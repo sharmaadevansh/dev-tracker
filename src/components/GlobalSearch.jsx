@@ -2,26 +2,17 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, FolderGit2, FileCode, CheckSquare, Terminal, Keyboard } from 'lucide-react'
+import { Search, FolderGit2, FileCode, CheckSquare, FileText, Keyboard } from 'lucide-react'
 import { useUserHandles } from '../context/UserContext'
-
-const TOPICS = [
-  { id: 'js', name: 'JavaScript', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'react', name: 'React', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'node', name: 'Node.js', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'express', name: 'Express', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'mongodb', name: 'MongoDB', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'system-design', name: 'System Design', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'os', name: 'Operating Systems', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'dbms', name: 'DBMS', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'networks', name: 'Computer Networks', category: 'Learning Topic', path: '/dashboard/learning' },
-  { id: 'oop', name: 'OOP', category: 'Learning Topic', path: '/dashboard/learning' }
-]
+import { useAuth } from '../context/AuthContext'
+import { getScopedItem } from '../utils/storage'
 
 export default function GlobalSearch({ isOpen, onClose }) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const username = user?.username || ''
   const { handles } = useUserHandles()
   const navigate = useNavigate()
   const inputRef = useRef(null)
@@ -37,22 +28,16 @@ export default function GlobalSearch({ isOpen, onClose }) {
 
   // Fetch search items
   const searchItems = useMemo(() => {
-    // 1. Load Projects from React Query's backend cache, with localStorage fallback.
-    let projects = queryClient.getQueryData(['backend-projects']) || []
+    // 1. Load Projects from React Query's backend cache, with user-scoped storage fallback
+    let projects = queryClient.getQueryData(['backend-projects', username]) || []
     if (!projects.length) {
-      try {
-        const raw = localStorage.getItem('devtrack_projects')
-        if (raw) projects = JSON.parse(raw)
-      } catch {}
+      projects = getScopedItem('projects', username, [])
     }
 
-    // 2. Load Notes from React Query's backend cache, with localStorage fallback.
-    let notes = queryClient.getQueryData(['backend-notes']) || []
+    // 2. Load Notes from React Query's backend cache, with user-scoped storage fallback
+    let notes = queryClient.getQueryData(['backend-notes', username]) || []
     if (!notes.length) {
-      try {
-        const raw = localStorage.getItem('devtrack_notes')
-        if (raw) notes = JSON.parse(raw)
-      } catch {}
+      notes = getScopedItem('notes', username, [])
     }
 
     // 3. Load Repos from React Query cache
@@ -81,18 +66,10 @@ export default function GlobalSearch({ isOpen, onClose }) {
         category: 'Developer Note',
         desc: n.tags || 'General note',
         path: '/dashboard/notes',
-        icon: Terminal,
-      })),
-      ...TOPICS.map((t) => ({
-        id: `topic-${t.id}`,
-        name: t.name,
-        category: 'Learning Topic',
-        desc: `Revise and study ${t.name}`,
-        path: t.path,
-        icon: CheckSquare,
+        icon: FileText,
       })),
     ]
-  }, [queryClient, handles.github, isOpen])
+  }, [queryClient, handles.github, username])
 
   // Filter items by search query
   const filtered = useMemo(() => {
@@ -150,8 +127,8 @@ export default function GlobalSearch({ isOpen, onClose }) {
             className="w-full max-w-lg glass rounded-xl overflow-hidden border border-hairline bg-gunmetal shadow-2xl"
           >
             {/* Search Input */}
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-hairline">
-              <Search size={18} className="text-chrome-dim shrink-0" />
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-hairline">
+              <Search size={16} className="text-chrome-dim shrink-0" />
               <input
                 ref={inputRef}
                 value={query}
@@ -160,16 +137,16 @@ export default function GlobalSearch({ isOpen, onClose }) {
                   setSelectedIndex(0)
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Search repositories, projects, notes, learning..."
-                className="bg-transparent text-sm text-chrome placeholder-chrome-dim outline-none flex-1 border-none"
+                placeholder="Search repositories, projects, notes..."
+                className="bg-transparent text-xs sm:text-sm text-chrome placeholder-chrome-dim outline-none flex-1 border-none"
               />
-              <span className="text-[10px] bg-steel text-chrome-dim px-2 py-0.5 rounded font-mono border border-hairline/80 flex items-center gap-1 shrink-0">
-                <Keyboard size={10} /> ESC
-              </span>
+              <kbd className="text-[10px] bg-steel text-chrome-dim px-1.5 py-0.5 rounded border border-hairline">
+                ESC
+              </kbd>
             </div>
 
             {/* List Results */}
-            <div className="max-h-[320px] overflow-y-auto p-2 flex flex-col gap-1 scrollbar-thin">
+            <div className="max-h-[300px] overflow-y-auto p-1.5 flex flex-col gap-0.5 scrollbar-thin">
               {filtered.map((item, index) => {
                 const Icon = item.icon
                 const isSelected = index === selectedIndex
@@ -178,43 +155,39 @@ export default function GlobalSearch({ isOpen, onClose }) {
                     key={item.id}
                     onClick={() => handleSelect(item)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-steel border border-signal-dim/35 text-chrome'
-                        : 'bg-transparent border border-transparent text-chrome-dim'
+                        ? 'bg-steel text-chrome'
+                        : 'bg-transparent text-chrome-dim hover:text-chrome'
                     }`}
                   >
-                    <div className={`p-1.5 rounded-md border shrink-0 ${
-                      isSelected ? 'bg-signal/10 border-signal/30 text-signal' : 'bg-void border-hairline text-chrome-dim'
-                    }`}>
-                      <Icon size={14} />
+                    <div className="p-1 rounded-md bg-steel border border-hairline text-chrome-dim shrink-0 mt-0.5">
+                      <Icon size={13} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold truncate">{item.name}</span>
-                        <span className={`text-[9px] font-mono uppercase tracking-wider font-semibold border px-1.5 py-0.5 rounded ${
-                          isSelected ? 'border-signal-dim/30 text-signal bg-signal/5' : 'border-hairline text-chrome-dim/80 bg-void/50'
-                        }`}>
+                        <span className="text-xs font-medium truncate">{item.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-steel text-chrome-dim border border-hairline">
                           {item.category}
                         </span>
                       </div>
-                      <p className="text-[10px] text-chrome-dim truncate mt-0.5">{item.desc}</p>
+                      <p className="text-[11px] text-chrome-dim truncate mt-0.5">{item.desc}</p>
                     </div>
                   </div>
                 );
               })}
 
               {filtered.length === 0 && (
-                <div className="py-8 text-center text-xs text-chrome-dim font-mono">
-                  No records match your query. Try searching for files, tags, or topics.
+                <div className="py-8 text-center text-xs text-chrome-dim">
+                  No records match your query.
                 </div>
               )}
             </div>
 
             {/* Footer tips */}
-            <div className="px-4 py-2 bg-void/50 border-t border-hairline flex items-center justify-between text-[9px] text-chrome-dim font-mono">
-              <span>Use ↑ ↓ keys to navigate, ↵ to select</span>
-              <span>Global indexer active</span>
+            <div className="px-4 py-2 bg-void/50 border-t border-hairline flex items-center justify-between text-[11px] text-chrome-dim">
+              <span>Use ↑ ↓ to navigate, ↵ to open</span>
+              <span>DevTrack Search</span>
             </div>
           </motion.div>
         </motion.div>

@@ -17,6 +17,11 @@ export async function loginRequest(username, password) {
   return data
 }
 
+export async function registerRequest(username, password, email = '') {
+  const { data } = await api.post('/auth/register', { username, password, email })
+  return data
+}
+
 export async function fetchCurrentUser() {
   const { data } = await api.get('/auth/me')
   return data
@@ -71,4 +76,54 @@ export async function saveLearning(topics) {
   return data
 }
 
+export async function fetchLeaderboard(params = {}) {
+  const { data } = await api.get('/ranking/leaderboard', { params })
+  return data
+}
+
+export async function fetchMyRanking() {
+  const { data } = await api.get('/ranking/me')
+  return data
+}
+
+export async function triggerRankingSync() {
+  const { data } = await api.post('/ranking/sync')
+  return data
+}
+
+export async function fetchUniversities() {
+  const { data } = await api.get('/ranking/universities')
+  return data
+}
+
+export async function fetchPublicProfile(username) {
+  const { data } = await api.get(`/profile/${encodeURIComponent(username)}`)
+  return data
+}
+
+export async function fetchAiRoast(username) {
+  const { data } = await api.get(`/roast/${encodeURIComponent(username)}`)
+  return data
+}
+
+export async function fetchAchievements(username = '') {
+  const url = username ? `/ranking/achievements/${encodeURIComponent(username)}` : '/ranking/achievements'
+  const { data } = await api.get(url)
+  return data
+}
+
+export async function optimizeResumeBullet({ bullet, role, targetKeywords }) {
+  const { data } = await api.post('/ai/optimize-bullet', { bullet, role, targetKeywords })
+  return data
+}
+
+export async function fetchRecommendedProblems(username = '') {
+  const { data } = await api.get('/ai/recommend-problems', {
+    params: username ? { username } : {}
+  })
+  return data
+}
+
 export default api
+
+

@@ -8,13 +8,13 @@ export async function fetchGfgProfile(username) {
     const { data } = await axios.get(`/api/proxy/gfg/${encodeURIComponent(username)}`, { timeout: 7000 })
     return {
       userName: data.userName || username,
-      instituteRank: data.instituteRank || 'Top 10%',
-      institute: data.institute || 'Developer Community',
-      codingScore: data.codingScore || 240,
-      monthlyScore: data.monthlyScore || 45,
-      totalProblemsSolved: data.totalProblemsSolved || 85,
-      currentStreak: data.currentStreak || 7,
-      maxStreak: data.maxStreak || 15,
+      instituteRank: data.instituteRank || 'Unranked',
+      institute: data.institute || '',
+      codingScore: data.codingScore || 0,
+      monthlyScore: data.monthlyScore || 0,
+      totalProblemsSolved: data.totalProblemsSolved || 0,
+      currentStreak: data.currentStreak || 0,
+      maxStreak: data.maxStreak || 0,
       solvedStats: data.solvedStats || null,
     }
   } catch (err) {
@@ -27,28 +27,28 @@ export async function fetchGfgProfile(username) {
     const info = data.info || data
     return {
       userName: info.userName || username,
-      instituteRank: info.instituteRank || 'N/A',
-      institute: info.institute || 'Developer Community',
-      codingScore: info.codingScore || 180,
-      monthlyScore: info.monthlyScore || 30,
-      totalProblemsSolved: info.totalProblemsSolved || 65,
-      currentStreak: info.currentStreak ?? info.streak ?? 4,
-      maxStreak: info.maxStreak || 12,
+      instituteRank: info.instituteRank || 'Unranked',
+      institute: info.institute || '',
+      codingScore: info.codingScore || 0,
+      monthlyScore: info.monthlyScore || 0,
+      totalProblemsSolved: info.totalProblemsSolved || 0,
+      currentStreak: info.currentStreak ?? info.streak ?? 0,
+      maxStreak: info.maxStreak || 0,
       solvedStats: data.solvedStats || null,
     }
   } catch {
     // 3. Fallback
     return {
       userName: username,
-      instituteRank: 'Top 15%',
-      institute: 'Developer Community',
-      codingScore: 240,
-      monthlyScore: 50,
-      totalProblemsSolved: 90,
-      currentStreak: 6,
-      maxStreak: 18,
+      instituteRank: 'Unranked',
+      institute: '',
+      codingScore: 0,
+      monthlyScore: 0,
+      totalProblemsSolved: 0,
+      currentStreak: 0,
+      maxStreak: 0,
       solvedStats: null,
-      isDemo: true,
+      isDemo: false,
     }
   }
 }

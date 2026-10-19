@@ -50,6 +50,19 @@ test('2. POST /api/auth/login rejects invalid credentials with 401', async () =>
   )
 })
 
+test('2b. POST /api/auth/register registers a new unique developer account', async () => {
+  const testUser = `newuser_${Date.now()}`
+  const res = await axios.post(`${BASE_URL}/api/auth/register`, {
+    username: testUser,
+    password: 'password123',
+    email: `${testUser}@example.com`,
+  })
+  assert.equal(res.status, 201)
+  assert.equal(res.data.ok, true)
+  assert.equal(res.data.user.username, testUser)
+  assert.ok(res.data.token, 'Should return JWT token for new user')
+})
+
 test('3. POST /api/auth/login succeeds with valid credentials and returns JWT', async () => {
   const res = await axios.post(`${BASE_URL}/api/auth/login`, {
     username: 'devansh',
@@ -127,3 +140,77 @@ test('9. GET /api/dashboard-summary aggregates metrics correctly', async () => {
   assert.ok('resumes' in res.data)
   assert.ok('learning' in res.data)
 })
+
+test('10. GET /api/ranking/leaderboard returns candidates ranking list', async () => {
+  const res = await axios.get(`${BASE_URL}/api/ranking/leaderboard`)
+  assert.equal(res.status, 200)
+  assert.ok(Array.isArray(res.data.entries))
+})
+
+test('11. GET /api/profile/:username returns public profile data', async () => {
+  const res = await axios.get(`${BASE_URL}/api/profile/devansh`)
+  assert.equal(res.status, 200)
+  assert.equal(res.data.username, 'devansh')
+  assert.ok(res.data.ranking)
+})
+
+test('12. GET /api/badge/:username returns valid dynamic SVG image card', async () => {
+  const res = await axios.get(`${BASE_URL}/api/badge/devansh`)
+  assert.equal(res.status, 200)
+  assert.match(res.headers['content-type'], /image\/svg\+xml/i)
+  assert.match(res.data, /<svg/i)
+})
+
+test('13. GET /api/roast/:username generates comedy AI developer roast', async () => {
+  const res = await axios.get(`${BASE_URL}/api/roast/devansh`)
+  assert.equal(res.status, 200)
+  assert.ok(res.data.roast)
+  assert.ok(res.data.burnRating)
+})
+
+test('14. Security Headers & Rate Limit headers are enforced', async () => {
+  const res = await axios.get(`${BASE_URL}/api/health`)
+  assert.equal(res.headers['x-content-type-options'], 'nosniff')
+  assert.equal(res.headers['x-frame-options'], 'SAMEORIGIN')
+  assert.ok(res.headers['x-ratelimit-remaining'] !== undefined)
+})
+
+test('15. GET /api/ranking/compare returns head-to-head metrics for 2 developers', async () => {
+  const res = await axios.get(`${BASE_URL}/api/ranking/compare?u1=devansh&u2=alex`)
+  assert.equal(res.status, 200)
+  assert.equal(res.data.developerA.username, 'devansh')
+  assert.equal(res.data.developerB.username, 'alex')
+  assert.ok(res.data.metrics.devScore)
+  assert.ok(res.data.summary.overallLeader)
+})
+
+test('16. GET /api/ranking/achievements returns badge milestones and progress', async () => {
+  const res = await axios.get(`${BASE_URL}/api/ranking/achievements/devansh`)
+  assert.equal(res.status, 200)
+  assert.ok(Array.isArray(res.data.achievements))
+  assert.ok(res.data.total >= 8)
+  assert.ok(res.data.completionPercentage >= 0)
+})
+
+test('17. POST /api/ai/optimize-bullet generates 3 ATS-optimized bullet variations', async () => {
+  const res = await axios.post(`${BASE_URL}/api/ai/optimize-bullet`, {
+    bullet: 'Worked on user authentication using JWT and bcrypt, improving system security.',
+    role: 'Senior Backend Engineer',
+    targetKeywords: 'JWT, bcrypt, security, microservices'
+  })
+  assert.equal(res.status, 200)
+  assert.ok(res.data.impactScore >= 80)
+  assert.equal(res.data.variations.length, 3)
+  assert.ok(res.data.variations[0].text.length > 20)
+  assert.ok(Array.isArray(res.data.powerVerbs))
+})
+
+test('18. GET /api/ai/recommend-problems returns 3 targeted daily problem challenges', async () => {
+  const res = await axios.get(`${BASE_URL}/api/ai/recommend-problems?username=devansh`)
+  assert.equal(res.status, 200)
+  assert.equal(res.data.recommendations.length, 3)
+  assert.ok(res.data.focusArea)
+  assert.ok(res.data.recommendations[0].url.startsWith('http'))
+  assert.ok(res.data.recommendations[0].hint)
+})
+

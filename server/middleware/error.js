@@ -1,4 +1,4 @@
-export function errorHandler(err, req, res, next) {
+export function errorHandler(err, req, res, _next) {
   console.error('[Error Pipeline]', err.name || 'Error', ':', err.message)
 
   // Mongoose validation error
@@ -27,8 +27,13 @@ export function errorHandler(err, req, res, next) {
     return res.status(401).json({ error: 'Authentication token has expired.' })
   }
 
-  res.status(err.status || 500).json({
-    error: err.message || 'Unexpected server error.',
+  const isProduction = process.env.NODE_ENV === 'production'
+  const statusCode = err.status || 500
+
+  res.status(statusCode).json({
+    error: isProduction && statusCode === 500 
+      ? 'An unexpected server error occurred. Please try again later.' 
+      : (err.message || 'Unexpected server error.'),
   })
 }
 

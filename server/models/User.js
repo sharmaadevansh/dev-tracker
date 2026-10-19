@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       default: '',
     },
+    university: {
+      type: String,
+      trim: true,
+      default: '',
+      index: true,
+    },
     handles: {
       github: { type: String, default: '', trim: true },
       leetcode: { type: String, default: '', trim: true },

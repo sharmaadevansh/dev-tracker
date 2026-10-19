@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { isDbConnected } from '../config/db.js'
+import { syncUserRanking } from '../services/ranking.service.js'
 
 const DEFAULT_HANDLES = {
   github: '',
@@ -27,6 +28,7 @@ export async function getHandles(req, res, next) {
         return res.json({
           ...DEFAULT_HANDLES,
           ...(user.handles?.toObject?.() || user.handles || {}),
+          university: user.university || '',
           handles: { ...DEFAULT_HANDLES, ...(user.handles?.toObject?.() || user.handles || {}) },
           activePlatforms: { ...DEFAULT_ACTIVE_PLATFORMS, ...(user.activePlatforms?.toObject?.() || user.activePlatforms || {}) },
         })
@@ -35,6 +37,7 @@ export async function getHandles(req, res, next) {
 
     res.json({
       ...DEFAULT_HANDLES,
+      university: '',
       handles: DEFAULT_HANDLES,
       activePlatforms: DEFAULT_ACTIVE_PLATFORMS,
     })
@@ -48,11 +51,12 @@ export async function updateHandles(req, res, next) {
     const payload = req.body || {}
     let handlesToUpdate = {}
     let platformsToUpdate = {}
+    const universityToUpdate = payload.university !== undefined ? String(payload.university).trim() : null
 
     if (payload.handles && typeof payload.handles === 'object') {
       handlesToUpdate = payload.handles
     } else {
-      const { activePlatforms, ...rest } = payload
+      const { activePlatforms: _activePlatforms, university: _u, ...rest } = payload
       handlesToUpdate = rest
     }
 
@@ -68,6 +72,9 @@ export async function updateHandles(req, res, next) {
           ...(user.handles?.toObject?.() || user.handles || {}),
           ...handlesToUpdate,
         }
+        if (universityToUpdate !== null) {
+          user.university = universityToUpdate
+        }
         if (Object.keys(platformsToUpdate).length > 0) {
           user.activePlatforms = {
             ...DEFAULT_ACTIVE_PLATFORMS,
@@ -77,8 +84,12 @@ export async function updateHandles(req, res, next) {
         }
         await user.save()
 
+        // Background trigger rank sync
+        syncUserRanking(user._id, user.username, user.university, user.handles).catch(() => {})
+
         return res.json({
           ...user.handles.toObject(),
+          university: user.university || '',
           handles: user.handles.toObject(),
           activePlatforms: user.activePlatforms.toObject(),
         })
@@ -88,6 +99,7 @@ export async function updateHandles(req, res, next) {
     res.json({
       ...DEFAULT_HANDLES,
       ...handlesToUpdate,
+      university: universityToUpdate || '',
       handles: { ...DEFAULT_HANDLES, ...handlesToUpdate },
       activePlatforms: { ...DEFAULT_ACTIVE_PLATFORMS, ...platformsToUpdate },
     })

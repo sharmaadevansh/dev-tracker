@@ -1,4 +1,4 @@
-export function GithubIcon({ size = 16, className = '', strokeWidth }) {
+export function GithubIcon({ size = 16, className = '' }) {
   return (
     <svg
       width={size}
@@ -12,7 +12,7 @@ export function GithubIcon({ size = 16, className = '', strokeWidth }) {
   )
 }
 
-export function LinkedinIcon({ size = 16, className = '', strokeWidth }) {
+export function LinkedinIcon({ size = 16, className = '' }) {
   return (
     <svg
       width={size}

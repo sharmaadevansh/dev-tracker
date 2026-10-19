@@ -3,14 +3,15 @@ import {
   AUTH_TOKEN_KEY,
   fetchCurrentUser,
   loginRequest,
+  registerRequest,
   updateCredentialsRequest,
 } from '../services/api/backend'
 
 const AuthContext = createContext(null)
 
 const DEFAULT_USER = {
-  username: 'devansh',
-  password: 'devtrack2026',
+  username: '',
+  password: '',
 }
 
 export function AuthProvider({ children }) {
@@ -62,20 +63,59 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const logout = () => {
-    sessionStorage.removeItem(AUTH_TOKEN_KEY)
-    setIsAuthenticated(false)
-  }
+  const register = async (username, password, email = '') => {
+    const cleanUser = username.trim().toLowerCase()
+    const cleanPass = password.trim()
+    const cleanEmail = email.trim()
 
-  const updateCredentials = async (newUsername, newPassword) => {
-    if (!newUsername.trim() || !newPassword.trim()) {
-      return { ok: false, error: 'Credentials cannot be blank.' }
+    if (!cleanUser || !cleanPass) {
+      return { ok: false, error: 'Username and password cannot be blank.' }
+    }
+    if (cleanUser.length < 3) {
+      return { ok: false, error: 'Username must be at least 3 characters.' }
+    }
+    if (cleanPass.length < 6) {
+      return { ok: false, error: 'Password must be at least 6 characters.' }
     }
 
     try {
-      const result = await updateCredentialsRequest(newUsername.trim(), newPassword.trim())
+      const result = await registerRequest(cleanUser, cleanPass, cleanEmail)
       sessionStorage.setItem(AUTH_TOKEN_KEY, result.token)
-      setUser({ username: result.user.username, password: newPassword.trim() })
+      setUser({ username: result.user.username, email: result.user.email })
+      setIsAuthenticated(true)
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error.response?.data?.error || 'Registration failed.',
+      }
+    }
+  }
+
+  const logout = () => {
+    sessionStorage.removeItem(AUTH_TOKEN_KEY)
+    setIsAuthenticated(false)
+    setUser(null)
+  }
+
+  const updateCredentials = async (newUsername, newPassword) => {
+    const cleanUser = typeof newUsername === 'string' ? newUsername.trim() : ''
+    const cleanPass = typeof newPassword === 'string' && newPassword.trim() ? newPassword.trim() : undefined
+
+    if (!cleanUser) {
+      return { ok: false, error: 'Username cannot be blank.' }
+    }
+
+    try {
+      const result = await updateCredentialsRequest(cleanUser, cleanPass)
+      if (result.token) {
+        sessionStorage.setItem(AUTH_TOKEN_KEY, result.token)
+      }
+      setUser((prev) => ({
+        ...prev,
+        username: result.user?.username || cleanUser,
+        university: result.user?.university !== undefined ? result.user.university : prev?.university,
+      }))
       return { ok: true }
     } catch (error) {
       return {
@@ -86,7 +126,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, authReady, login, logout, updateCredentials }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, authReady, login, register, logout, updateCredentials }}>
       {children}
     </AuthContext.Provider>
   )

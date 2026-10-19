@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, Circle, Trash2, Calendar, Target, Flame, Plus } from 'lucide-react'
+import { CheckCircle2, Circle, Trash2, Calendar, Target, Flame, Plus, CheckSquare } from 'lucide-react'
 import Heatmap from '../components/Heatmap'
+import { useAuth } from '../context/AuthContext'
+import { getScopedItem, setScopedItem } from '../utils/storage'
 import {
   createCollectionItem,
   deleteCollectionItem,
@@ -10,7 +12,7 @@ import {
   updateCollectionItem,
 } from '../services/api/backend'
 
-const STORAGE_KEY = 'devtrack_goals'
+const GOALS_STORAGE_KEY = 'goals'
 
 const CATEGORY_COLORS = {
   Coding: 'border-signal/20 text-signal-dim bg-signal/5 glow-cyan',
@@ -19,56 +21,26 @@ const CATEGORY_COLORS = {
   Other: 'border-hairline text-chrome-dim bg-steel/20',
 }
 
-const DEFAULT_GOALS = [
-  {
-    id: 'goal-1',
-    text: 'Solve 3 LeetCode Medium questions (Dynamic Programming)',
-    category: 'Coding',
-    completed: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'goal-2',
-    text: 'Complete CRUD schema & tests in Project page',
-    category: 'Projects',
-    completed: false,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'goal-3',
-    text: 'Revise Virtual Memory & Page Replacement algorithms',
-    category: 'Revision',
-    completed: false,
-    createdAt: new Date().toISOString()
-  }
-]
-
-function loadGoals() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : DEFAULT_GOALS
-  } catch {
-    return DEFAULT_GOALS
-  }
-}
+const DEFAULT_GOALS = []
 
 export default function DailyGoals() {
+  const { user } = useAuth()
+  const username = user?.username || ''
   const queryClient = useQueryClient()
   const [newGoalText, setNewGoalText] = useState('')
   const [newGoalCategory, setNewGoalCategory] = useState('Coding')
-  const [streak, setStreak] = useState(4)
 
   const { data: remoteGoals } = useQuery({
-    queryKey: ['backend-goals'],
+    queryKey: ['backend-goals', username],
     queryFn: () => fetchCollection('goals'),
-    initialData: loadGoals,
+    initialData: () => getScopedItem(GOALS_STORAGE_KEY, username, DEFAULT_GOALS),
   })
 
-  const goals = remoteGoals || []
+  const goals = useMemo(() => remoteGoals || [], [remoteGoals])
 
   const syncGoalsCache = (nextGoals) => {
-    queryClient.setQueryData(['backend-goals'], nextGoals)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextGoals))
+    queryClient.setQueryData(['backend-goals', username], nextGoals)
+    setScopedItem(GOALS_STORAGE_KEY, username, nextGoals)
   }
 
   const createMutation = useMutation({
@@ -93,7 +65,7 @@ export default function DailyGoals() {
       text: newGoalText.trim(),
       category: newGoalCategory,
       completed: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     }
 
     syncGoalsCache([...goals, goal])
@@ -102,7 +74,17 @@ export default function DailyGoals() {
   }
 
   const toggleGoal = (id) => {
-    const nextGoals = goals.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g))
+    const nextGoals = goals.map((g) => {
+      if (g.id === id) {
+        const nextCompleted = !g.completed
+        return {
+          ...g,
+          completed: nextCompleted,
+          completedAt: nextCompleted ? new Date().toISOString() : null,
+        }
+      }
+      return g
+    })
     syncGoalsCache(nextGoals)
     const nextGoal = nextGoals.find((g) => g.id === id)
     if (nextGoal) updateMutation.mutate(nextGoal)
@@ -113,110 +95,193 @@ export default function DailyGoals() {
     deleteMutation.mutate(id)
   }
 
-  const totalCount = goals.length
-  const completedCount = goals.filter((g) => g.completed).length
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  // Dynamic calculated streak from consecutive active days with completed goals
+  const calculatedStreak = useMemo(() => {
+    const completedDays = new Set()
+    goals.forEach((g) => {
+      if (g.completed) {
+        const d = (g.completedAt || g.createdAt || '').slice(0, 10)
+        if (d) completedDays.add(d)
+      }
+    })
 
-  const ratingText = useMemo(() => {
-    if (completionRate === 100) return { status: 'OPTIMAL', text: 'All targets secured! Excellent consistency.', color: 'text-green-500 border-green-500/20 bg-green-500/5' }
-    if (completionRate >= 70) return { status: 'ON TRACK', text: 'Critical targets cleared.', color: 'text-yellow-dim border-yellow/20 bg-yellow/5' }
-    if (completionRate > 0) return { status: 'WARNING', text: 'Incomplete tasks remain.', color: 'text-signal-dim border-signal/20 bg-signal/5' }
-    return { status: 'STAGNANT', text: 'No targets completed yet.', color: 'text-chrome-dim border-hairline bg-steel/10' }
-  }, [completionRate])
+    if (completedDays.size === 0) return 0
+
+    const today = new Date()
+    const todayStr = today.toISOString().slice(0, 10)
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().slice(0, 10)
+
+    let checkDate = new Date(today)
+    if (!completedDays.has(todayStr)) {
+      if (completedDays.has(yesterdayStr)) {
+        checkDate = yesterday
+      } else {
+        return 0
+      }
+    }
+
+    let count = 0
+    while (true) {
+      const curStr = checkDate.toISOString().slice(0, 10)
+      if (completedDays.has(curStr)) {
+        count++
+        checkDate.setDate(checkDate.getDate() - 1)
+      } else {
+        break
+      }
+    }
+    return count
+  }, [goals])
+
+  // Real goals activity map for Heatmap component
+  const goalsHeatmapData = useMemo(() => {
+    const map = {}
+    goals.forEach((g) => {
+      const d = (g.completedAt || g.createdAt || '').slice(0, 10) || new Date().toISOString().slice(0, 10)
+      map[d] = (map[d] || 0) + (g.completed ? 2 : 1)
+    })
+    return map
+  }, [goals])
+
+  const total = goals.length
+  const completedCount = goals.filter((g) => g.completed).length
+  const completionRate = total > 0 ? Math.round((completedCount / total) * 100) : 0
+
+  const getRatingInfo = (rate) => {
+    if (total === 0) return { status: 'STANDBY READY', color: 'text-chrome-dim border-hairline bg-steel/30', text: 'No sprint goals logged today. Add targets above to initiate velocity tracking.' }
+    if (rate >= 80) return { status: 'OPTIMAL VELOCITY', color: 'text-signal-dim border-signal/20 bg-signal/5 glow-cyan', text: 'Flawless execution cycle. Maintain output rhythm.' }
+    if (rate >= 40) return { status: 'MODERATE MOMENTUM', color: 'text-violet-dim border-violet/20 bg-violet/5 glow-violet', text: 'Steady task pacing. Push to conclude pending items.' }
+    return { status: 'CRITICAL LATENCY', color: 'text-yellow-dim border-yellow/20 bg-yellow/5', text: 'Sprint velocity falling behind. Clear bottleneck goals.' }
+  }
+
+  const ratingText = getRatingInfo(completionRate)
 
   return (
-    <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin">
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-chrome">Daily Goals</h1>
+    <div className="flex-1 px-4 sm:px-8 md:px-12 py-6 sm:py-8 max-w-7xl mx-auto w-full overflow-y-auto space-y-6 scrollbar-thin">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-5">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-chrome tracking-tight">
+            Daily Goals
+          </h1>
+          <p className="text-chrome-dim text-xs sm:text-sm mt-1">
+            Track daily coding milestones and habit consistency
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 border border-hairline px-3 py-1 rounded-md bg-steel text-xs text-chrome font-medium">
+            <Target size={13} className="text-chrome-dim" />
+            <span>{completedCount} of {total} completed</span>
+          </div>
+          <div className="flex items-center gap-1.5 border border-hairline px-3 py-1 rounded-md bg-steel text-xs text-chrome font-medium">
+            <Flame size={13} className="text-chrome-dim" />
+            <span>{calculatedStreak}d streak</span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left Columns: Todays Tasks */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+        {/* Left 2 Cols: Goal Form & Checklists */}
+        <div className="lg:col-span-2 space-y-6">
           
-          {/* Add Goal Form */}
-          <div className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline">
-            <h3 className="font-display font-semibold text-chrome text-xs mb-3">Set New Objective</h3>
-            <form onSubmit={handleAddGoal} className="flex gap-3">
-              <input
-                value={newGoalText}
-                onChange={(e) => setNewGoalText(e.target.value)}
-                placeholder="Ex. Refactor auth hook context..."
-                required
-                className="bg-void border border-hairline rounded-full px-4 py-2 text-xs flex-1 text-chrome outline-none focus:border-signal"
-              />
+          {/* Add Goal Input Field */}
+          <form onSubmit={handleAddGoal} className="glass p-2 sm:p-2.5 flex flex-col sm:flex-row items-center gap-2">
+            <input
+              type="text"
+              placeholder="Deploy authentication middleware, solve 2 heap questions..."
+              value={newGoalText}
+              onChange={(e) => setNewGoalText(e.target.value)}
+              className="flex-1 bg-transparent px-4 py-2 text-xs text-chrome placeholder-chrome-dim/50 outline-none w-full"
+            />
+            
+            <div className="flex items-center gap-2 w-full sm:w-auto px-2 pb-2 sm:pb-0">
               <select
                 value={newGoalCategory}
                 onChange={(e) => setNewGoalCategory(e.target.value)}
-                className="bg-void border border-hairline rounded-full px-4 py-2 text-xs text-chrome outline-none focus:border-signal font-mono"
+                className="bg-steel/60 hover:bg-steel border border-hairline text-chrome text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer transition-colors"
               >
-                <option>Coding</option>
-                <option>Projects</option>
-                <option>Revision</option>
-                <option>Other</option>
+                <option value="Coding">Coding</option>
+                <option value="Projects">Projects</option>
+                <option value="Revision">Revision</option>
+                <option value="Other">Other</option>
               </select>
+
               <button
                 type="submit"
-                className="bg-gradient-to-r from-signal to-violet hover:opacity-90 transition-all text-void font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center gap-1 shrink-0 cursor-pointer hover:shadow-[0_0_10px_rgba(0,0,0,0.26)]"
+                className="flex items-center gap-1.5 bg-chrome text-void hover:opacity-90 transition-opacity font-medium text-xs px-3.5 py-1.5 rounded-lg cursor-pointer shrink-0 ml-auto sm:ml-0"
               >
-                <Plus size={14} /> Add
+                <Plus size={13} />
+                Add
               </button>
-            </form>
-          </div>
-
-          {/* Goal List Box */}
-          <div className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline flex-1 flex flex-col min-h-[300px]">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-display font-semibold text-chrome text-xs">Today's Focus Checklist</h3>
-              <span className="text-[10px] text-chrome-dim font-mono">{completedCount}/{totalCount} Completed</span>
             </div>
+          </form>
 
-            <div className="flex-1 flex flex-col gap-2.5">
-              <AnimatePresence initial={false}>
-                {goals.map((g) => (
-                  <motion.div
-                    key={g.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -15 }}
-                    className="flex items-center justify-between p-3.5 rounded-[24px] border border-hairline/60 bg-void/35 hover:border-signal-dim/35 transition-all duration-300"
-                  >
-                    <button
-                      onClick={() => toggleGoal(g.id)}
-                      className="flex items-start gap-3 text-left flex-1 cursor-pointer"
+          {/* Goal List */}
+          <div className="space-y-3">
+            {goals.length === 0 ? (
+              <div className="glass p-8 text-center flex flex-col items-center justify-center space-y-2">
+                <CheckSquare size={24} className="text-chrome-dim/40 mb-1" />
+                <p className="text-chrome text-sm font-semibold">No Goals Set For Today</p>
+                <p className="text-chrome-dim text-xs max-w-sm mt-0.5">Use the quick add bar above to lock in your coding, project, or revision targets for the day.</p>
+              </div>
+            ) : (
+              <AnimatePresence>
+                {goals.map((goal) => {
+                  const catClass = CATEGORY_COLORS[goal.category] || CATEGORY_COLORS.Other
+                  return (
+                    <motion.div
+                      key={goal.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      layout
+                      className={`group glass p-3.5 flex items-center justify-between gap-4 transition-colors hover:border-chrome/20 ${
+                        goal.completed ? 'opacity-70' : ''
+                      }`}
                     >
-                      <span className="shrink-0 mt-0.5 text-signal">
-                        {g.completed 
-                          ? <CheckCircle2 size={16} className="text-signal-dim shrink-0" /> 
-                          : <Circle size={16} className="text-chrome-dim/60 shrink-0" />}
-                      </span>
-                      <div className="min-w-0">
-                        <p className={`text-xs text-chrome font-medium ${g.completed ? 'line-through opacity-45' : ''}`}>
-                          {g.text}
-                        </p>
-                        <span className={`inline-block border text-[8px] font-mono uppercase tracking-wider font-semibold rounded-full px-2.5 py-0.5 mt-1.5 ${CATEGORY_COLORS[g.category]}`}>
-                          {g.category}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <button
+                          onClick={() => toggleGoal(goal.id)}
+                          className="shrink-0 text-chrome-dim hover:text-chrome transition-colors cursor-pointer"
+                        >
+                          {goal.completed ? (
+                            <CheckCircle2 size={16} className="text-chrome" />
+                          ) : (
+                            <Circle size={16} className="text-chrome-dim/40 hover:text-chrome" />
+                          )}
+                        </button>
+
+                        <span
+                          className={`text-xs text-chrome truncate cursor-pointer select-none ${
+                            goal.completed ? 'line-through text-chrome-dim' : ''
+                          }`}
+                          onClick={() => toggleGoal(goal.id)}
+                        >
+                          {goal.text}
                         </span>
                       </div>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(g.id)}
-                      className="text-chrome-dim hover:text-signal transition-colors ml-3 cursor-pointer shrink-0"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
 
-              {goals.length === 0 && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-hairline rounded-[20px]">
-                  <Target size={26} className="text-chrome-dim mb-2" />
-                  <p className="text-xs text-chrome-dim">All clean! Create a goal above to initialize your pipeline.</p>
-                </div>
-              )}
-            </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className={`text-[11px] font-medium border px-2 py-0.5 rounded-md ${catClass}`}>
+                          {goal.category}
+                        </span>
+
+                        <button
+                          onClick={() => handleDelete(goal.id)}
+                          className="opacity-0 group-hover:opacity-100 text-chrome-dim hover:text-red-400 transition-opacity p-1 cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
+            )}
           </div>
         </div>
 
@@ -224,8 +289,8 @@ export default function DailyGoals() {
         <div className="lg:col-span-1 flex flex-col gap-6">
           
           {/* Progress Widget */}
-          <div className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline flex flex-col gap-5">
-            <h3 className="font-display font-semibold text-chrome text-xs">Performance Gauge</h3>
+          <div className="glass p-5 flex flex-col gap-4">
+            <h3 className="font-semibold text-chrome text-xs">Performance Gauge</h3>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 relative flex items-center justify-center shrink-0">
                 <svg className="w-full h-full transform -rotate-90">
@@ -234,7 +299,7 @@ export default function DailyGoals() {
                     cx="32"
                     cy="32"
                     r="26"
-                    stroke="var(--color-signal)"
+                    stroke="var(--color-chrome)"
                     strokeWidth="4.5"
                     fill="transparent"
                     strokeDasharray={163.36}
@@ -242,36 +307,36 @@ export default function DailyGoals() {
                     className="transition-all duration-700"
                   />
                 </svg>
-                <span className="absolute font-mono font-bold text-xs text-chrome">{completionRate}%</span>
+                <span className="absolute font-semibold text-xs tabular-nums text-chrome">{completionRate}%</span>
               </div>
               <div className="min-w-0">
-                <span className={`text-[9px] font-bold font-mono border rounded-full px-2.5 py-0.5 ${ratingText.color}`}>
+                <span className={`text-[11px] font-medium border rounded-md px-2 py-0.5 ${ratingText.color}`}>
                   {ratingText.status}
                 </span>
-                <p className="text-[11px] text-chrome-dim mt-2 leading-relaxed font-mono">{ratingText.text}</p>
+                <p className="text-xs text-chrome-dim mt-1.5 leading-relaxed">{ratingText.text}</p>
               </div>
             </div>
 
-            <div className="border-t border-hairline/50 pt-3 mt-1 flex justify-between items-center text-xs">
+            <div className="border-t border-hairline pt-3 flex justify-between items-center text-xs">
               <span className="text-chrome-dim flex items-center gap-1">
-                <Flame size={14} className="text-signal" /> Current Streak
+                <Flame size={14} className="text-chrome-dim" /> Current Streak
               </span>
-              <span className="font-mono font-bold text-chrome">{streak} Days</span>
+              <span className="font-semibold tabular-nums text-chrome">{calculatedStreak} Days</span>
             </div>
           </div>
 
           {/* Weekly review heatmap */}
-          <div className="glass rounded-[36px] p-6 bg-gunmetal/30 border-hairline flex-1 flex flex-col justify-between min-h-[220px]">
+          <div className="glass p-5 flex-1 flex flex-col justify-between min-h-[200px]">
             <div>
-              <h3 className="font-display font-semibold text-chrome text-xs flex items-center gap-1.5">
-                <Calendar size={13} className="text-signal" />
+              <h3 className="font-semibold text-chrome text-xs flex items-center gap-1.5">
+                <Calendar size={13} className="text-chrome-dim" />
                 Goals Heatmap
               </h3>
-              <p className="text-[10px] text-chrome-dim mt-0.5">Review targets and check last active day</p>
+              <p className="text-xs text-chrome-dim mt-0.5">Daily consistency record</p>
             </div>
             
             <div className="flex-1 mt-4 flex items-center justify-center">
-              <Heatmap rows={7} cols={4} lastActiveDayIndex={27} />
+              <Heatmap rows={7} cols={4} data={goalsHeatmapData} colorScheme="signal" label="goals" />
             </div>
           </div>
         </div>

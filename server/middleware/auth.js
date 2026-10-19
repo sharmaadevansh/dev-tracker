@@ -50,7 +50,7 @@ export async function requireAuth(req, res, next) {
     }
 
     return next()
-  } catch (err) {
+  } catch {
     // 2. Try legacy token fallback if JWT fails
     const legacy = verifyLegacyToken(token)
     if (legacy && legacy.username) {

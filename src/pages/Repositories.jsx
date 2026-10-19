@@ -50,23 +50,15 @@ export default function Repositories() {
     staleTime: 5 * 60 * 1000,
   })
 
-  // Fetch active repo's latest commit details
+  // Fetch active repo's latest commit details via backend proxy
   const commitQuery = useQuery({
     queryKey: ['github-repo-commits', handles.github, activeRepo?.name],
     queryFn: async () => {
       try {
-        const { data } = await axios.get(`https://api.github.com/repos/${handles.github}/${activeRepo.name}/commits`, {
-          params: { per_page: 1 },
-          timeout: 4000,
+        const { data } = await axios.get(`/api/proxy/github/${handles.github}/${activeRepo.name}/commits`, {
+          timeout: 5000,
         })
-        if (data && data.length > 0) {
-          return {
-            message: data[0].commit.message,
-            author: data[0].commit.author.name,
-            date: new Date(data[0].commit.author.date).toLocaleDateString(),
-          }
-        }
-        return null
+        return data
       } catch {
         return {
           message: 'Active repository codebase',
@@ -80,20 +72,17 @@ export default function Repositories() {
     retry: false,
   })
 
-  // Fetch active repo's README content
+  // Fetch active repo's README content via backend proxy
   const readmeQuery = useQuery({
     queryKey: ['github-repo-readme', handles.github, activeRepo?.name],
     queryFn: async () => {
       try {
-        const res = await axios.get(`https://raw.githubusercontent.com/${handles.github}/${activeRepo.name}/main/README.md`)
-        return res.data
+        const { data } = await axios.get(`/api/proxy/github/${handles.github}/${activeRepo.name}/readme`, {
+          timeout: 5000,
+        })
+        return data?.readme || `### ${activeRepo.name}\nNo README.md documentation file was found.`
       } catch {
-        try {
-          const res = await axios.get(`https://raw.githubusercontent.com/${handles.github}/${activeRepo.name}/master/README.md`)
-          return res.data
-        } catch {
-          return `### ${activeRepo.name}\nNo README.md documentation file was found on the repository root directory.`
-        }
+        return `### ${activeRepo.name}\nNo README.md documentation file was found on the repository root directory.`
       }
     },
     enabled: !!activeRepo && !!handles.github,
@@ -132,26 +121,27 @@ export default function Repositories() {
   }
 
   return (
-    <div className="flex-1 px-12 py-10 max-w-7xl mx-auto w-full overflow-y-auto space-y-8 scrollbar-thin">
-      <div className="mb-6">
+    <div className="flex-1 px-4 sm:px-8 md:px-12 py-6 sm:py-8 max-w-7xl mx-auto w-full overflow-y-auto space-y-6 scrollbar-thin">
+      <div>
         <h1 className="font-display text-2xl font-semibold text-chrome">Repository Explorer</h1>
+        <p className="text-sm text-chrome-dim font-sans mt-1">Explore, inspect READMEs, and analyze public GitHub codebases</p>
       </div>
 
       {/* Filter and Search controls */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="flex items-center gap-2 bg-steel/80 border border-hairline rounded-full px-4 py-2 flex-1">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 bg-steel/80 border border-hairline rounded-full px-4 py-2 flex-1 focus-within:border-signal/50 focus-within:ring-2 focus-within:ring-signal/15 transition-all">
           <Search size={15} className="text-chrome-dim" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search repositories..."
-            className="bg-transparent outline-none text-sm flex-1 text-chrome"
+            className="bg-transparent outline-none text-sm flex-1 text-chrome font-sans"
           />
         </div>
         <select
           value={langFilter}
           onChange={(e) => setLangFilter(e.target.value)}
-          className="bg-steel/80 border border-hairline rounded-full px-4 py-2 text-sm text-chrome outline-none"
+          className="bg-steel/80 border border-hairline rounded-full px-4 py-2 text-sm text-chrome outline-none cursor-pointer"
         >
           <option value="all">All languages</option>
           {languages.map((l) => (
@@ -161,43 +151,48 @@ export default function Repositories() {
       </div>
 
       {isError && (
-        <p className="text-sm text-signal font-mono">Couldn't load repositories for this username.</p>
+        <p className="text-sm text-signal font-sans">Couldn't load repositories for this username.</p>
       )}
 
       {/* Repo Cards Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filtered.map((r) => (
             <div
               key={r.name}
               onClick={() => setActiveRepo(r)}
-              className="glass rounded-[36px] p-6 hover:border-signal-dim transition-colors flex flex-col justify-between gap-3.5 cursor-pointer bg-gunmetal/30 group"
+              className="glass glass-interactive rounded-[24px] p-5 sm:p-6 hover:border-signal/40 transition-all flex flex-col justify-between gap-3.5 cursor-pointer bg-gunmetal/30 group"
             >
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm text-chrome truncate group-hover:text-signal transition-colors">{r.name}</span>
-                  <span className="text-[10px] text-chrome-dim font-mono">{formatSize(r.size)}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-sm text-chrome truncate group-hover:text-signal transition-colors font-display">{r.name}</span>
+                  <span className="text-xs text-chrome-dim font-sans shrink-0">{formatSize(r.size)}</span>
                 </div>
                 {r.description && (
-                  <p className="text-xs text-chrome-dim line-clamp-2 mt-1">{r.description}</p>
+                  <p className="text-xs text-chrome-dim line-clamp-2 mt-1.5 font-sans leading-relaxed">{r.description}</p>
                 )}
               </div>
-              <div className="flex items-center justify-between text-xs text-chrome-dim font-mono mt-1 border-t border-hairline/30 pt-2">
+              <div className="flex items-center justify-between text-xs text-chrome-dim font-sans mt-1 border-t border-hairline/40 pt-2.5">
                 <div className="flex items-center gap-3">
-                  {r.language && <span>{r.language}</span>}
-                  <span className="flex items-center gap-1"><Star size={11} />{r.stars}</span>
-                  <span className="flex items-center gap-1"><GitFork size={11} />{r.forks}</span>
+                  {r.language && (
+                    <span className="font-medium flex items-center gap-1.5 text-chrome">
+                      <span className="w-2 h-2 rounded-full bg-signal shrink-0" />
+                      {r.language}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 tabular-nums"><Star size={11} className="text-yellow" />{r.stars}</span>
+                  <span className="flex items-center gap-1 tabular-nums"><GitFork size={11} className="text-violet" />{r.forks}</span>
                 </div>
-                <span className="text-[10px] text-chrome-dim/70">updated {new Date(r.updatedAt).toLocaleDateString()}</span>
+                <span className="text-xs text-chrome-dim/70">updated {new Date(r.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
           ))}
           {filtered.length === 0 && (
-            <p className="text-sm text-chrome-dim col-span-2 text-center py-10">No repositories match your search.</p>
+            <p className="text-sm text-chrome-dim col-span-2 text-center py-10 font-sans">No repositories match your search.</p>
           )}
         </div>
       )}
@@ -218,7 +213,7 @@ export default function Repositories() {
               <div className="flex items-center justify-between pb-4 border-b border-hairline mb-4">
                 <div className="min-w-0">
                   <h2 className="font-display font-semibold text-lg text-chrome truncate">{activeRepo.name}</h2>
-                  <p className="text-xs text-chrome-dim font-mono mt-0.5">Size: {formatSize(activeRepo.size)}</p>
+                  <p className="text-xs text-chrome-dim font-sans mt-0.5">Size: {formatSize(activeRepo.size)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <a
@@ -239,62 +234,62 @@ export default function Repositories() {
               </div>
 
               {/* Stats Metadata rows */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-xs text-chrome font-mono">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-xs text-chrome font-sans">
                 <div className="bg-void/50 border border-hairline rounded-lg p-2.5 flex items-center gap-2">
-                  <Database size={13} className="text-signal" />
+                  <Database size={13} className="text-chrome-dim" />
                   <div>
-                    <p className="text-[9px] text-chrome-dim leading-none">SIZE</p>
-                    <p className="font-bold mt-1">{formatSize(activeRepo.size)}</p>
+                    <p className="text-[11px] text-chrome-dim font-medium leading-none">Size</p>
+                    <p className="font-semibold text-xs mt-1">{formatSize(activeRepo.size)}</p>
                   </div>
                 </div>
                 <div className="bg-void/50 border border-hairline rounded-lg p-2.5 flex items-center gap-2">
-                  <Star size={13} className="text-signal" />
+                  <Star size={13} className="text-chrome-dim" />
                   <div>
-                    <p className="text-[9px] text-chrome-dim leading-none">STARS</p>
-                    <p className="font-bold mt-1">{activeRepo.stars}</p>
+                    <p className="text-[11px] text-chrome-dim font-medium leading-none">Stars</p>
+                    <p className="font-semibold text-xs tabular-nums mt-1">{activeRepo.stars}</p>
                   </div>
                 </div>
                 <div className="bg-void/50 border border-hairline rounded-lg p-2.5 flex items-center gap-2">
-                  <GitFork size={13} className="text-signal" />
+                  <GitFork size={13} className="text-chrome-dim" />
                   <div>
-                    <p className="text-[9px] text-chrome-dim leading-none">FORKS</p>
-                    <p className="font-bold mt-1">{activeRepo.forks}</p>
+                    <p className="text-[11px] text-chrome-dim font-medium leading-none">Forks</p>
+                    <p className="font-semibold text-xs tabular-nums mt-1">{activeRepo.forks}</p>
                   </div>
                 </div>
                 <div className="bg-void/50 border border-hairline rounded-lg p-2.5 flex items-center gap-2">
-                  <Calendar size={13} className="text-signal" />
+                  <Calendar size={13} className="text-chrome-dim" />
                   <div>
-                    <p className="text-[9px] text-chrome-dim leading-none">UPDATED</p>
-                    <p className="font-bold mt-1 truncate">{new Date(activeRepo.updatedAt).toLocaleDateString()}</p>
+                    <p className="text-[11px] text-chrome-dim font-medium leading-none">Updated</p>
+                    <p className="font-semibold text-xs mt-1 truncate">{new Date(activeRepo.updatedAt).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
 
               {/* Latest Commit widget */}
               <div className="bg-void/40 border border-hairline rounded-xl p-4 mb-6">
-                <h4 className="text-[10px] uppercase font-mono tracking-widest text-chrome-dim font-bold flex items-center gap-1.5 mb-2.5">
+                <h4 className="text-xs text-chrome-dim font-medium flex items-center gap-1.5 mb-2.5">
                   <GitCommit size={14} className="text-signal" />
                   Latest Commit
                 </h4>
                 {commitQuery.isLoading ? (
                   <div className="h-10 w-full bg-steel/30 animate-pulse rounded" />
                 ) : commitQuery.data ? (
-                  <div className="font-mono text-xs text-chrome-dim flex flex-col gap-1 leading-relaxed">
+                  <div className="font-sans text-xs text-chrome-dim flex flex-col gap-1 leading-relaxed">
                     <p className="text-chrome font-semibold">"{commitQuery.data.message}"</p>
-                    <p className="text-[10px] mt-1">Author: {commitQuery.data.author} // Committed on {commitQuery.data.date}</p>
+                    <p className="text-xs mt-1 text-chrome-dim/80">Author: {commitQuery.data.author} • Committed on {commitQuery.data.date}</p>
                   </div>
                 ) : (
-                  <p className="text-xs text-chrome-dim font-mono">No commit history found.</p>
+                  <p className="text-xs text-chrome-dim font-sans">No commit history found.</p>
                 )}
               </div>
 
               {/* README previewer */}
               <div className="border border-hairline rounded-xl bg-void/20 p-4">
-                <h4 className="text-[10px] uppercase font-mono tracking-widest text-chrome-dim font-bold flex items-center gap-1.5 mb-3">
+                <h4 className="text-xs uppercase font-sans tracking-wider text-chrome-dim font-bold flex items-center gap-1.5 mb-3">
                   <FileText size={13} className="text-signal" />
                   README.md Preview
                 </h4>
-                <div className="max-h-[300px] overflow-y-auto pr-1 scrollbar-thin select-text text-sm leading-relaxed text-chrome-dim">
+                <div className="max-h-[300px] overflow-y-auto pr-1 scrollbar-thin select-text text-sm leading-relaxed text-chrome-dim font-sans">
                   {readmeQuery.isLoading ? (
                     <div className="flex flex-col gap-2">
                       <div className="h-4 w-3/4 bg-steel/40 animate-pulse rounded" />
@@ -311,7 +306,7 @@ export default function Repositories() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-hairline/50 text-[10px] text-chrome-dim font-mono text-center shrink-0">
+            <div className="pt-4 border-t border-hairline/50 text-xs text-chrome-dim font-sans text-center shrink-0">
               API queries completed dynamically
             </div>
           </div>
