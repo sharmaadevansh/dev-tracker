@@ -6,19 +6,8 @@ import { isDbConnected } from '../config/db.js'
 // In-memory fallback user store when MongoDB is not connected
 const fallbackUsers = new Map()
 
-// Seed default demo user
-try {
-  fallbackUsers.set('devansh', {
-    id: 'demo-devansh-id',
-    username: 'devansh',
-    passwordHash: bcrypt.hashSync('devtrack2026', 10),
-    email: 'devansh@example.com',
-    university: 'Lovely Professional University',
-    role: 'user',
-    isPremium: true,
-  })
-} catch {
-  // Ignore sync hash error if any
+export function getFallbackUsersCount() {
+  return fallbackUsers.size
 }
 
 export async function login(req, res, next) {
@@ -67,19 +56,6 @@ export async function login(req, res, next) {
           token: signJwtToken(fallbackUser),
         })
       }
-    }
-
-    if (cleanUser === 'devansh' && cleanPass === 'devtrack2026') {
-      const fallbackDevansh = {
-        id: 'fallback-id',
-        username: 'devansh',
-        university: 'Lovely Professional University',
-      }
-      return res.json({
-        ok: true,
-        user: { username: 'devansh', university: 'Lovely Professional University' },
-        token: signJwtToken(fallbackDevansh),
-      })
     }
 
     return res.status(401).json({ ok: false, error: 'Invalid username or password.' })

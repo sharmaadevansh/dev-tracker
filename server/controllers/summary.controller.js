@@ -5,6 +5,42 @@ import Resume from '../models/Resume.js'
 import LearningTopic from '../models/LearningTopic.js'
 import User from '../models/User.js'
 import { isDbConnected } from '../config/db.js'
+import { getFallbackUsersCount } from './auth.controller.js'
+
+let communityStatsCache = null
+let lastCommunityStatsFetch = 0
+const CACHE_DURATION_MS = 10 * 1000 // 10 seconds cache
+
+export async function getCommunityStats(req, res, next) {
+  try {
+    const now = Date.now()
+    if (communityStatsCache && now - lastCommunityStatsFetch < CACHE_DURATION_MS) {
+      return res.json(communityStatsCache)
+    }
+
+    let totalUsers = 0
+
+    if (isDbConnected()) {
+      totalUsers = await User.countDocuments()
+    } else {
+      totalUsers = getFallbackUsersCount()
+    }
+
+    const data = {
+      totalUsers,
+      isDbConnected: isDbConnected(),
+      timestamp: new Date().toISOString(),
+    }
+
+    communityStatsCache = data
+    lastCommunityStatsFetch = now
+
+    res.json(data)
+  } catch (err) {
+    next(err)
+  }
+}
+
 
 export async function getDashboardSummary(req, res, next) {
   try {

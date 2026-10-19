@@ -124,6 +124,12 @@ export async function fetchRecommendedProblems(username = '') {
   return data
 }
 
+export async function fetchCommunityStats() {
+  const { data } = await api.get('/community-stats')
+  return data
+}
+
 export default api
+
 
 

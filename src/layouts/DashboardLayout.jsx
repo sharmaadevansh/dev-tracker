@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import AmbientGlow from '../components/AmbientGlow'
+import FloatingUserBubble from '../components/FloatingUserBubble'
 
 export default function DashboardLayout() {
   return (
@@ -10,6 +11,7 @@ export default function DashboardLayout() {
       <div className="flex-1 overflow-hidden flex flex-col relative z-10">
         <Outlet />
       </div>
+      <FloatingUserBubble />
     </div>
   )
 }

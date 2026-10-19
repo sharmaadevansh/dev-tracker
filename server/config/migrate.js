@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -31,17 +32,22 @@ export async function migrateFromLegacyJson() {
     const legacyDb = JSON.parse(raw)
     console.log('[Migration] Migrating data from legacy server/data/db.json into MongoDB...')
 
-    // 1. Create User
-    const legacyUser = legacyDb.user || { username: 'devansh', password: 'devtrack2026' }
+    // 1. Create Initial User
+    const username = legacyDb.user?.username || 'devansh'
+    const generatedPassword = crypto.randomBytes(16).toString('hex')
+    const password = process.env.INITIAL_ADMIN_PASSWORD || generatedPassword
     const user = await User.create({
-      username: legacyUser.username || 'devansh',
-      password: legacyUser.password || 'devtrack2026', // Will be hashed via pre-save hook
+      username,
+      password,
       handles: legacyDb.handles || {},
       activePlatforms: legacyDb.activePlatforms || {},
     })
 
     const userId = user._id
     console.log(`[Migration] User '${user.username}' created with ID: ${userId}`)
+    if (!process.env.INITIAL_ADMIN_PASSWORD) {
+      console.log(`[Migration] One-time generated initial password for '${username}': ${password}`)
+    }
 
     // 2. Migrate Projects
     if (Array.isArray(legacyDb.projects) && legacyDb.projects.length > 0) {

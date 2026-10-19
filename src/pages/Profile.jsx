@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Shield, Eye, EyeOff, User, CheckCircle, GraduationCap, Award, ArrowUpRight } from 'lucide-react'
+import { Shield, Eye, EyeOff, User, CheckCircle, Award, ArrowUpRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useUserHandles } from '../context/UserContext'
+import UniversitySelect from '../components/UniversitySelect'
 import { fetchAchievements } from '../services/api/backend'
 
 export default function Profile() {
@@ -107,15 +108,11 @@ export default function Profile() {
               <label className="text-xs font-medium text-chrome-dim">
                 University or institution
               </label>
-              <div className="flex items-center bg-steel/60 hover:bg-steel border border-hairline focus-within:border-chrome-dim rounded-lg px-3 py-2 transition-colors">
-                <GraduationCap size={14} className="text-chrome-dim mr-2 shrink-0" />
-                <input
-                  value={profileUni}
-                  onChange={(e) => setProfileUni(e.target.value)}
-                  className="w-full bg-transparent border-none text-xs text-chrome outline-none"
-                  placeholder="e.g. Stanford University, IIT Bombay"
-                />
-              </div>
+              <UniversitySelect
+                value={profileUni}
+                onChange={setProfileUni}
+                placeholder="Search 800+ Indian universities by college, city, or state..."
+              />
             </div>
 
             {/* New Password */}

@@ -197,18 +197,14 @@ npm run preview
 
 ---
 
-# 🔑 Demo Credentials
+# 🔐 Authentication & Accounts
 
-```
-Username : devansh
-Password : devtrack2026
-```
+User accounts are authenticated using secure JSON Web Tokens (JWT) with bcrypt-hashed credentials stored in MongoDB.
 
-These credentials can be modified inside:
-
-```
-src/context/AuthContext.jsx
-```
+To access the platform:
+1. Navigate to the login screen and click **Register**.
+2. Create your personal account with username and password.
+3. Once authenticated, your profile, projects, and platform analytics are securely tracked.
 
 ---
 

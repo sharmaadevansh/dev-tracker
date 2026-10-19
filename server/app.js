@@ -20,6 +20,7 @@ import goalRoutes from './routes/goal.routes.js'
 import resumeRoutes from './routes/resume.routes.js'
 import learningRoutes from './routes/learning.routes.js'
 import summaryRoutes from './routes/summary.routes.js'
+import { getCommunityStats } from './controllers/summary.controller.js'
 import proxyRoutes from './routes/proxy.routes.js'
 import rankingRoutes from './routes/ranking.routes.js'
 import viralRoutes from './routes/viral.routes.js'
@@ -52,6 +53,9 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
   })
 })
+
+// Community Developer Telemetry
+app.get('/api/community-stats', getCommunityStats)
 
 // API Routers
 app.use('/api/auth', authRoutes)

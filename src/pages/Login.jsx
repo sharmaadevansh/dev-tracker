@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Shield, Sparkles, Code2, Trophy } from 'lucide-react'
+import FloatingUserBubble from '../components/FloatingUserBubble'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login({ defaultMode = 'login' }) {
@@ -277,6 +278,9 @@ export default function Login({ defaultMode = 'login' }) {
           </AnimatePresence>
         </motion.div>
       </div>
+
+      {/* Floating Active Community Telemetry Bubble */}
+      <FloatingUserBubble />
     </div>
   )
 }

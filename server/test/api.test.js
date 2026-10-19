@@ -20,6 +20,17 @@ test.before(async () => {
       resolve()
     })
   })
+
+  // Ensure test account exists for test suite
+  try {
+    await axios.post(`${BASE_URL}/api/auth/register`, {
+      username: 'devansh',
+      password: 'testpassword123',
+      email: 'devansh@example.com',
+    })
+  } catch {
+    // Account may already exist if MongoDB has existing data
+  }
 })
 
 test.after(async () => {
@@ -66,7 +77,7 @@ test('2b. POST /api/auth/register registers a new unique developer account', asy
 test('3. POST /api/auth/login succeeds with valid credentials and returns JWT', async () => {
   const res = await axios.post(`${BASE_URL}/api/auth/login`, {
     username: 'devansh',
-    password: 'devtrack2026',
+    password: 'testpassword123',
   })
   assert.equal(res.status, 200)
   assert.equal(res.data.ok, true)

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Code2, GraduationCap, ArrowRight, Swords, ChefHat, Zap } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '../components/BrandIcons'
+import UniversitySelect from '../components/UniversitySelect'
 import { useUserHandles } from '../context/UserContext'
 
 const platforms = [
@@ -199,12 +200,10 @@ export default function UsernameSetup() {
                 </p>
               </div>
             </div>
-            <input
-              type="text"
+            <UniversitySelect
               value={formUniversity}
-              onChange={(e) => setFormUniversity(e.target.value)}
-              placeholder="e.g. Delhi Technological University, IIT Bombay, Stanford..."
-              className="w-full text-xs font-sans py-2.5 px-4 bg-void border border-hairline rounded-xl text-chrome outline-none focus:border-violet/60"
+              onChange={setFormUniversity}
+              placeholder="Search 800+ Indian universities by college, city, or state..."
             />
           </div>
 
