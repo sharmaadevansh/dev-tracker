@@ -8,13 +8,20 @@
     "dev:backend": "node server/index.js",
     "dev:full": "concurrently \"npm run dev:backend\" \"npm run dev\"",
     "build": "vite build",
+    "render-build": "npm install --include=dev && npm run build",
     "start": "node server/index.js",
     "lint": "oxlint",
     "test": "node --test server/test/api.test.js",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
     "@tanstack/react-query": "^5.101.2",
+    "@vitejs/plugin-react": "^6.0.3",
+    "autoprefixer": "^10.5.2",
     "axios": "^1.18.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -24,21 +31,18 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^1.24.0",
     "mongoose": "^8.9.5",
+    "postcss": "^8.5.17",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
-    "recharts": "^3.9.2"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "autoprefixer": "^10.5.2",
-    "concurrently": "^9.2.1",
-    "oxlint": "^1.71.0",
-    "postcss": "^8.5.17",
+    "recharts": "^3.9.2",
     "tailwindcss": "^4.3.2",
     "vite": "^8.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
+    "oxlint": "^1.71.0"
   }
 }
