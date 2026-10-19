@@ -9,6 +9,7 @@
     "dev:full": "concurrently \"npm run dev:backend\" \"npm run dev\"",
     "build": "vite build",
     "render-build": "npm install --include=dev && npm run build",
+    "postinstall": "npm run build",
     "start": "node server/index.js",
     "lint": "oxlint",
     "test": "node --test server/test/api.test.js",
