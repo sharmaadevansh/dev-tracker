@@ -208,6 +208,15 @@ export async function updateAdminUser(req, res, next) {
 
     await user.save()
 
+    // Sync changes to Ranking collection so leaderboard and public profiles stay consistent
+    await Ranking.updateMany(
+      { userId: user._id },
+      {
+        username: user.username,
+        university: user.university || '',
+      }
+    )
+
     res.json({
       id: user._id.toString(),
       username: user.username,

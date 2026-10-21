@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   Code2, Search, LogOut, User, Sun, Moon, Menu, X,
   LayoutDashboard, Trophy, Activity, GitFork, FolderKanban,
-  CheckSquare, FileText, FileSpreadsheet, Sliders, ChevronDown
+  CheckSquare, FileText, FileSpreadsheet, Sliders, ChevronDown, CheckCircle2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -173,6 +173,9 @@ export default function Navbar() {
               <span className="text-xs font-sans font-medium text-chrome hidden md:inline truncate max-w-[85px]">
                 @{user?.username || 'dev'}
               </span>
+              {user?.isVerified && (
+                <CheckCircle2 size={12} className="text-signal shrink-0 hidden md:inline" title="Verified Developer" />
+              )}
               <ChevronDown
                 size={12}
                 className={`text-chrome-dim transition-transform duration-200 hidden sm:inline ${
@@ -265,6 +268,9 @@ export default function Navbar() {
                   <div>
                     <div className="text-xs font-semibold text-chrome font-sans flex items-center gap-1">
                       <span>@{user?.username || 'developer'}</span>
+                      {user?.isVerified && (
+                        <CheckCircle2 size={12} className="text-signal shrink-0" title="Verified Developer" />
+                      )}
                       <ChevronDown size={11} className="text-chrome-dim" />
                     </div>
                     <div className="text-[10px] text-signal-dim font-sans font-medium">Rank, Share & Features</div>

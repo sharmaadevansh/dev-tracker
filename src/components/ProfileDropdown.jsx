@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
   Trophy, GraduationCap, Sparkles, Copy, Check,
-  User, Sliders, LogOut, X, ArrowUpRight, ShieldAlert
+  User, Sliders, LogOut, X, ArrowUpRight, ShieldAlert, CheckCircle2
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useUserHandles } from '../context/UserContext'
@@ -93,8 +93,16 @@ export default function ProfileDropdown({ isOpen, onClose }) {
                 {userInitial}
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-chrome truncate">
-                  @{user?.username || 'developer'}
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-chrome truncate">
+                  <span>@{user?.username || 'developer'}</span>
+                  {user?.isVerified && (
+                    <CheckCircle2 size={12} className="text-signal shrink-0" title="Verified Developer" />
+                  )}
+                  {user?.role === 'admin' && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-signal/15 text-signal border border-signal/30 font-bold uppercase leading-none">
+                      Admin
+                    </span>
+                  )}
                 </div>
                 <div className="text-[11px] text-chrome-dim truncate">
                   {user?.email || displayUni}

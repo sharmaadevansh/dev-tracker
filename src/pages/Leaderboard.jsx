@@ -94,9 +94,14 @@ export default function Leaderboard() {
             <Trophy size={22} />
           </div>
           <div>
-            <span className="text-[11px] uppercase font-sans tracking-wider font-medium text-chrome-dim">
-              Your Current Standing ({user?.username})
-            </span>
+            <div className="flex items-center gap-1.5 justify-center md:justify-start">
+              <span className="text-[11px] uppercase font-sans tracking-wider font-medium text-chrome-dim">
+                Your Current Standing ({user?.username})
+              </span>
+              {user?.isVerified && (
+                <CheckCircle2 size={13} className="text-signal shrink-0" title="Verified Developer" />
+              )}
+            </div>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 mt-2">
               <div className="badge-base badge-gold">
                 <Trophy size={13} className="text-yellow" />
@@ -258,31 +263,41 @@ export default function Leaderboard() {
 
                       {/* Username */}
                       <td className="py-4 px-6">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-signal/15 border border-signal/30 flex items-center justify-center font-bold text-signal-dim dark:text-signal font-display uppercase">
-                            {candidate.username?.slice(0, 2)}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-chrome font-mono text-xs">
-                              @{candidate.username}
-                            </span>
-                            {(candidate.userId?.isVerified || candidate.isVerified) && (
-                              <CheckCircle2 size={13} className="text-signal shrink-0" title="Verified Developer" />
-                            )}
-                          </div>
-                        </div>
+                        {(() => {
+                          const candidateUsername = candidate.userId?.username || candidate.username
+                          const candidateUniversity = candidate.userId?.university || candidate.university
+                          const isCandidateVerified = !!(candidate.userId?.isVerified || candidate.isVerified)
+                          return (
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-signal/15 border border-signal/30 flex items-center justify-center font-bold text-signal-dim dark:text-signal font-display uppercase">
+                                {candidateUsername?.slice(0, 2)}
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-chrome font-mono text-xs">
+                                  @{candidateUsername}
+                                </span>
+                                {isCandidateVerified && (
+                                  <CheckCircle2 size={13} className="text-signal shrink-0" title="Verified Developer" />
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })()}
                       </td>
 
                       {/* University */}
                       <td className="py-4 px-6 text-chrome-dim font-sans">
-                        {candidate.university ? (
-                          <span className="flex items-center gap-1.5 font-medium text-chrome">
-                            <GraduationCap size={13} className="text-violet shrink-0" />
-                            {candidate.university}
-                          </span>
-                        ) : (
-                          <span className="italic text-chrome-dim/60">Independent</span>
-                        )}
+                        {(() => {
+                          const candidateUniversity = candidate.userId?.university || candidate.university
+                          return candidateUniversity ? (
+                            <span className="flex items-center gap-1.5 font-medium text-chrome">
+                              <GraduationCap size={13} className="text-violet shrink-0" />
+                              {candidateUniversity}
+                            </span>
+                          ) : (
+                            <span className="italic text-chrome-dim/60">Independent</span>
+                          )
+                        })()}
                       </td>
 
                       {/* DevScore */}
@@ -321,7 +336,7 @@ export default function Leaderboard() {
                       {/* Public Profile Link */}
                       <td className="py-4 px-6 text-right">
                         <Link
-                          to={`/u/${candidate.username}`}
+                          to={`/u/${candidate.userId?.username || candidate.username}`}
                           className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold font-sans bg-steel hover:bg-steel/70 text-chrome border border-hairline transition-all"
                         >
                           View <ExternalLink size={11} />

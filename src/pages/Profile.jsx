@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Shield, Eye, EyeOff, User, CheckCircle, Award, ArrowUpRight } from 'lucide-react'
+import { Shield, Eye, EyeOff, User, CheckCircle, CheckCircle2, Award, ArrowUpRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useUserHandles } from '../context/UserContext'
 import UniversitySelect from '../components/UniversitySelect'
@@ -71,6 +71,50 @@ export default function Profile() {
           <p className="text-xs sm:text-sm text-chrome-dim mt-1">
             Manage your account identity, credentials, and institutional affiliation.
           </p>
+        </div>
+
+        {/* Account Verification & Status Banner */}
+        <div className="glass p-5 rounded-2xl border border-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+              user?.isVerified
+                ? 'bg-signal/15 text-signal border border-signal/30'
+                : 'bg-steel text-chrome-dim border border-hairline'
+            }`}>
+              {user?.username ? user.username.slice(0, 2).toUpperCase() : 'U'}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm text-chrome">@{user?.username}</span>
+                {user?.isVerified ? (
+                  <span className="badge-base badge-signal font-semibold uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    <CheckCircle2 size={11} className="text-signal" />
+                    Verified Developer
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-steel text-chrome-dim border border-hairline">
+                    Community Member
+                  </span>
+                )}
+                {user?.role === 'admin' && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-signal/15 text-signal border border-signal/30 font-semibold uppercase">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-chrome-dim mt-0.5">
+                {user?.isVerified
+                  ? 'Your profile is officially verified by an administrator.'
+                  : 'Account unverified. An administrator can verify your profile from the admin console.'}
+              </p>
+            </div>
+          </div>
+          <Link
+            to={`/u/${user?.username}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-steel hover:bg-steel/70 text-chrome border border-hairline transition-all shrink-0"
+          >
+            Public Profile <ArrowUpRight size={12} />
+          </Link>
         </div>
 
         {/* Credentials Form */}
