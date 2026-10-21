@@ -69,6 +69,8 @@ export async function getPublicProfile(req, res, next) {
       username: user.username,
       university: user.university || '',
       email: user.email ? `${user.username}@users.devtrack.ai` : '',
+      role: user.role || 'user',
+      isVerified: !!user.isVerified,
       createdAt: user.createdAt,
       handles: user.handles || {},
       activePlatforms: user.activePlatforms || {},

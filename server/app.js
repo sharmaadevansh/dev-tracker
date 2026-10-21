@@ -25,6 +25,7 @@ import proxyRoutes from './routes/proxy.routes.js'
 import rankingRoutes from './routes/ranking.routes.js'
 import viralRoutes from './routes/viral.routes.js'
 import aiRoutes from './routes/ai.routes.js'
+import adminRoutes from './routes/admin.routes.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -59,6 +60,7 @@ app.get('/api/community-stats', getCommunityStats)
 
 // API Routers
 app.use('/api/auth', authRoutes)
+app.use('/api/admin', adminRoutes)
 app.use('/api/handles', handleRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/notes', noteRoutes)

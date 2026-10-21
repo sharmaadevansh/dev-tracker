@@ -279,7 +279,7 @@ export async function getLeaderboard({
       .sort(sortOption)
       .skip(skip)
       .limit(pageSize)
-      .populate('userId', 'username avatar university email')
+      .populate('userId', 'username avatar university email isVerified')
       .lean(),
     Ranking.countDocuments(query),
     Ranking.distinct('university', { university: { $ne: '' } }),

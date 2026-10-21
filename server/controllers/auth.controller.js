@@ -26,6 +26,10 @@ export async function login(req, res, next) {
         return res.status(401).json({ ok: false, error: 'Invalid username or password.' })
       }
 
+      if (user.isSuspended) {
+        return res.status(403).json({ ok: false, error: 'This account has been suspended by an administrator.' })
+      }
+
       const isMatch = await user.comparePassword(cleanPass)
       if (!isMatch) {
         return res.status(401).json({ ok: false, error: 'Invalid username or password.' })
@@ -34,7 +38,14 @@ export async function login(req, res, next) {
       const token = signJwtToken(user)
       return res.json({
         ok: true,
-        user: { username: user.username, email: user.email, role: user.role, isPremium: user.isPremium },
+        user: {
+          username: user.username,
+          email: user.email || '',
+          university: user.university || '',
+          role: user.role || 'user',
+          isVerified: !!user.isVerified,
+          isPremium: !!user.isPremium,
+        },
         token,
       })
     }
@@ -51,6 +62,7 @@ export async function login(req, res, next) {
             email: fallbackUser.email || '',
             university: fallbackUser.university || '',
             role: fallbackUser.role || 'user',
+            isVerified: !!fallbackUser.isVerified,
             isPremium: !!fallbackUser.isPremium,
           },
           token: signJwtToken(fallbackUser),
@@ -91,6 +103,8 @@ export async function register(req, res, next) {
         email: typeof email === 'string' ? email.trim() : '',
         university: typeof university === 'string' ? university.trim() : '',
         role: 'user',
+        isVerified: false,
+        isSuspended: false,
         isPremium: false,
       }
       fallbackUsers.set(cleanUser, newFallbackUser)
@@ -102,6 +116,8 @@ export async function register(req, res, next) {
           username: newFallbackUser.username,
           email: newFallbackUser.email,
           university: newFallbackUser.university,
+          role: 'user',
+          isVerified: false,
         },
         token,
       })
@@ -117,12 +133,21 @@ export async function register(req, res, next) {
       password: cleanPass,
       email: typeof email === 'string' ? email.trim() : '',
       university: typeof university === 'string' ? university.trim() : '',
+      role: 'user',
+      isVerified: false,
+      isSuspended: false,
     })
 
     const token = signJwtToken(newUser)
     res.status(201).json({
       ok: true,
-      user: { username: newUser.username, email: newUser.email, university: newUser.university },
+      user: {
+        username: newUser.username,
+        email: newUser.email,
+        university: newUser.university,
+        role: 'user',
+        isVerified: false,
+      },
       token,
     })
   } catch (err) {
@@ -136,6 +161,8 @@ export async function getCurrentUser(req, res) {
     email: req.user.email || '',
     university: req.user.university || '',
     role: req.user.role || 'user',
+    isVerified: !!req.user.isVerified,
+    isSuspended: !!req.user.isSuspended,
     isPremium: !!req.user.isPremium,
   })
 }
@@ -157,14 +184,24 @@ export async function updateCredentials(req, res, next) {
 
       const token = signJwtToken(user)
       return res.json({
-        user: { username: user.username, university: user.university },
+        user: {
+          username: user.username,
+          university: user.university,
+          role: user.role || 'user',
+          isVerified: !!user.isVerified,
+        },
         token,
       })
     }
 
     res.json({
-      user: { username: cleanUser || req.user.username, university: university || req.user.university || '' },
-      token: signJwtToken({ id: 'fallback-id', username: cleanUser || req.user.username }),
+      user: {
+        username: cleanUser || req.user.username,
+        university: university || req.user.university || '',
+        role: req.user.role || 'user',
+        isVerified: false,
+      },
+      token: signJwtToken({ id: 'fallback-id', username: cleanUser || req.user.username, role: 'user' }),
     })
   } catch (err) {
     next(err)

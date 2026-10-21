@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { UserProvider } from './context/UserContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import DashboardLayout from './layouts/DashboardLayout'
 
 // Code-split page routes with React.lazy
@@ -19,6 +20,8 @@ const DailyGoals = React.lazy(() => import('./pages/DailyGoals'))
 const Profile = React.lazy(() => import('./pages/Profile'))
 const PublicProfile = React.lazy(() => import('./pages/PublicProfile'))
 const Leaderboard = React.lazy(() => import('./pages/Leaderboard'))
+const AdminLogin = React.lazy(() => import('./pages/AdminLogin'))
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
 
 function PageFallback() {
   return (
@@ -45,7 +48,16 @@ export default function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Login defaultMode="signup" />} />
+                <Route path="/login/admin" element={<AdminLogin />} />
                 <Route path="/u/:username" element={<PublicProfile />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <AdminDashboard />
+                    </AdminRoute>
+                  }
+                />
                 <Route
                   path="/setup"
                   element={

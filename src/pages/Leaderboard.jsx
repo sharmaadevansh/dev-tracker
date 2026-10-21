@@ -11,6 +11,7 @@ import {
   Code2,
   Swords,
   Sparkles,
+  CheckCircle2,
 } from 'lucide-react'
 import { GithubIcon } from '../components/BrandIcons'
 import { fetchLeaderboard, fetchMyRanking, triggerRankingSync } from '../services/api/backend'
@@ -261,9 +262,14 @@ export default function Leaderboard() {
                           <div className="w-8 h-8 rounded-full bg-signal/15 border border-signal/30 flex items-center justify-center font-bold text-signal-dim dark:text-signal font-display uppercase">
                             {candidate.username?.slice(0, 2)}
                           </div>
-                          <span className="font-semibold text-chrome font-mono text-xs">
-                            @{candidate.username}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-chrome font-mono text-xs">
+                              @{candidate.username}
+                            </span>
+                            {(candidate.userId?.isVerified || candidate.isVerified) && (
+                              <CheckCircle2 size={13} className="text-signal shrink-0" title="Verified Developer" />
+                            )}
+                          </div>
                         </div>
                       </td>
 

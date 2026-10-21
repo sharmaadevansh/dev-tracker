@@ -5,12 +5,16 @@ import http from 'node:http'
 import app from '../app.js'
 import { connectDB } from '../config/db.js'
 import mongoose from 'mongoose'
+import User from '../models/User.js'
 
 let server
 const TEST_PORT = 5001
 const BASE_URL = `http://localhost:${TEST_PORT}`
 let authToken = ''
 let testProjectId = ''
+
+const SUITE_USER = `testdev_${Date.now()}`
+const SUITE_PASS = 'TestPass123!'
 
 test.before(async () => {
   await connectDB()
@@ -24,12 +28,12 @@ test.before(async () => {
   // Ensure test account exists for test suite
   try {
     await axios.post(`${BASE_URL}/api/auth/register`, {
-      username: 'devansh',
-      password: 'testpassword123',
-      email: 'devansh@example.com',
+      username: SUITE_USER,
+      password: SUITE_PASS,
+      email: `${SUITE_USER}@example.com`,
     })
   } catch {
-    // Account may already exist if MongoDB has existing data
+    // Ignore if already registered
   }
 })
 
@@ -49,7 +53,7 @@ test('2. POST /api/auth/login rejects invalid credentials with 401', async () =>
   await assert.rejects(
     async () => {
       await axios.post(`${BASE_URL}/api/auth/login`, {
-        username: 'devansh',
+        username: SUITE_USER,
         password: 'wrongpassword123',
       })
     },
@@ -62,27 +66,27 @@ test('2. POST /api/auth/login rejects invalid credentials with 401', async () =>
 })
 
 test('2b. POST /api/auth/register registers a new unique developer account', async () => {
-  const testUser = `newuser_${Date.now()}`
+  const uniqueUser = `reguser_${Date.now()}`
   const res = await axios.post(`${BASE_URL}/api/auth/register`, {
-    username: testUser,
+    username: uniqueUser,
     password: 'password123',
-    email: `${testUser}@example.com`,
+    email: `${uniqueUser}@example.com`,
   })
   assert.equal(res.status, 201)
   assert.equal(res.data.ok, true)
-  assert.equal(res.data.user.username, testUser)
+  assert.equal(res.data.user.username, uniqueUser)
   assert.ok(res.data.token, 'Should return JWT token for new user')
 })
 
 test('3. POST /api/auth/login succeeds with valid credentials and returns JWT', async () => {
   const res = await axios.post(`${BASE_URL}/api/auth/login`, {
-    username: 'devansh',
-    password: 'testpassword123',
+    username: SUITE_USER,
+    password: SUITE_PASS,
   })
   assert.equal(res.status, 200)
   assert.equal(res.data.ok, true)
   assert.ok(res.data.token, 'Token should be returned')
-  assert.equal(res.data.user.username, 'devansh')
+  assert.equal(res.data.user.username, SUITE_USER)
   authToken = res.data.token
 })
 
@@ -91,7 +95,7 @@ test('4. GET /api/auth/me returns authenticated user identity', async () => {
     headers: { Authorization: `Bearer ${authToken}` },
   })
   assert.equal(res.status, 200)
-  assert.equal(res.data.username, 'devansh')
+  assert.equal(res.data.username, SUITE_USER)
 })
 
 test('5. GET /api/handles returns platform handles and active flags', async () => {
@@ -224,4 +228,128 @@ test('18. GET /api/ai/recommend-problems returns 3 targeted daily problem challe
   assert.ok(res.data.recommendations[0].url.startsWith('http'))
   assert.ok(res.data.recommendations[0].hint)
 })
+
+let adminAuthToken = ''
+let testManagedUserId = ''
+const ADMIN_TEST_USER = `admin_test_${Date.now()}`
+const ADMIN_TEST_PASS = 'AdminPassSecure99!'
+
+test('19. GET /api/admin/stats rejects unauthenticated requests with 401', async () => {
+  await assert.rejects(
+    async () => {
+      await axios.get(`${BASE_URL}/api/admin/stats`)
+    },
+    (err) => {
+      assert.equal(err.response.status, 401)
+      return true
+    }
+  )
+})
+
+test('20. Standard user token is rejected from /api/admin/stats with 403 Forbidden', async () => {
+  await assert.rejects(
+    async () => {
+      await axios.get(`${BASE_URL}/api/admin/stats`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+    },
+    (err) => {
+      assert.equal(err.response.status, 403)
+      assert.ok(err.response.data.error.includes('Administrator privileges required'))
+      return true
+    }
+  )
+})
+
+test('21. Admin user can authenticate and obtain admin JWT token', async () => {
+  // Create an admin user directly
+  const user = await User.create({
+    username: ADMIN_TEST_USER,
+    password: ADMIN_TEST_PASS,
+    email: `${ADMIN_TEST_USER}@admin.devtrack.ai`,
+    role: 'admin',
+    isVerified: true,
+  })
+  assert.equal(user.role, 'admin')
+
+  const loginRes = await axios.post(`${BASE_URL}/api/auth/login`, {
+    username: ADMIN_TEST_USER,
+    password: ADMIN_TEST_PASS,
+  })
+  assert.equal(loginRes.status, 200)
+  assert.equal(loginRes.data.user.role, 'admin')
+  assert.equal(loginRes.data.user.isVerified, true)
+  assert.ok(loginRes.data.token)
+  adminAuthToken = loginRes.data.token
+})
+
+test('22. Admin can access /api/admin/stats and /api/admin/users successfully', async () => {
+  const statsRes = await axios.get(`${BASE_URL}/api/admin/stats`, {
+    headers: { Authorization: `Bearer ${adminAuthToken}` },
+  })
+  assert.equal(statsRes.status, 200)
+  assert.ok(statsRes.data.totalUsers >= 1)
+  assert.ok(typeof statsRes.data.verifiedUsers === 'number')
+
+  const usersRes = await axios.get(`${BASE_URL}/api/admin/users`, {
+    headers: { Authorization: `Bearer ${adminAuthToken}` },
+  })
+  assert.equal(usersRes.status, 200)
+  assert.ok(Array.isArray(usersRes.data))
+  const foundUser = usersRes.data.find((u) => u.username === SUITE_USER)
+  assert.ok(foundUser)
+  testManagedUserId = foundUser.id || foundUser._id
+})
+
+test('23. Admin can toggle user verification badge via PATCH /api/admin/users/:id/verify', async () => {
+  assert.ok(testManagedUserId)
+  const patchRes = await axios.patch(
+    `${BASE_URL}/api/admin/users/${testManagedUserId}/verify`,
+    {},
+    { headers: { Authorization: `Bearer ${adminAuthToken}` } }
+  )
+  assert.equal(patchRes.status, 200)
+  assert.equal(patchRes.data.isVerified, true)
+
+  // Verify in public profile
+  const profileRes = await axios.get(`${BASE_URL}/api/profile/${SUITE_USER}`)
+  assert.equal(profileRes.status, 200)
+  assert.equal(profileRes.data.isVerified, true)
+})
+
+test('24. Admin can toggle user suspension and suspended user is blocked from logging in', async () => {
+  assert.ok(testManagedUserId)
+  const suspendRes = await axios.patch(
+    `${BASE_URL}/api/admin/users/${testManagedUserId}/suspend`,
+    {},
+    { headers: { Authorization: `Bearer ${adminAuthToken}` } }
+  )
+  assert.equal(suspendRes.status, 200)
+  assert.equal(suspendRes.data.isSuspended, true)
+
+  // Blocked login
+  await assert.rejects(
+    async () => {
+      await axios.post(`${BASE_URL}/api/auth/login`, {
+        username: SUITE_USER,
+        password: SUITE_PASS,
+      })
+    },
+    (err) => {
+      assert.equal(err.response.status, 403)
+      assert.ok(err.response.data.error.includes('suspended'))
+      return true
+    }
+  )
+
+  // Reactivate user
+  const unsuspendRes = await axios.patch(
+    `${BASE_URL}/api/admin/users/${testManagedUserId}/suspend`,
+    {},
+    { headers: { Authorization: `Bearer ${adminAuthToken}` } }
+  )
+  assert.equal(unsuspendRes.status, 200)
+  assert.equal(unsuspendRes.data.isSuspended, false)
+})
+
 

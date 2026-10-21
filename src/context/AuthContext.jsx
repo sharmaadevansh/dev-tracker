@@ -11,7 +11,10 @@ const AuthContext = createContext(null)
 
 const DEFAULT_USER = {
   username: '',
-  password: '',
+  email: '',
+  university: '',
+  role: 'user',
+  isVerified: false,
 }
 
 export function AuthProvider({ children }) {
@@ -31,11 +34,19 @@ export function AuthProvider({ children }) {
 
       try {
         const currentUser = await fetchCurrentUser()
-        setUser((prev) => ({ ...prev, username: currentUser.username }))
+        setUser({
+          username: currentUser.username,
+          email: currentUser.email || '',
+          university: currentUser.university || '',
+          role: currentUser.role || 'user',
+          isVerified: !!currentUser.isVerified,
+          isSuspended: !!currentUser.isSuspended,
+        })
         setIsAuthenticated(true)
       } catch {
         sessionStorage.removeItem(AUTH_TOKEN_KEY)
         setIsAuthenticated(false)
+        setUser(DEFAULT_USER)
       } finally {
         setAuthReady(true)
       }
@@ -52,9 +63,17 @@ export function AuthProvider({ children }) {
     try {
       const result = await loginRequest(username.trim(), password.trim())
       sessionStorage.setItem(AUTH_TOKEN_KEY, result.token)
-      setUser({ username: result.user.username, password: password.trim() })
+      const u = result.user || {}
+      setUser({
+        username: u.username || username.trim(),
+        email: u.email || '',
+        university: u.university || '',
+        role: u.role || 'user',
+        isVerified: !!u.isVerified,
+        isSuspended: !!u.isSuspended,
+      })
       setIsAuthenticated(true)
-      return { ok: true }
+      return { ok: true, user: u }
     } catch (error) {
       return {
         ok: false,
@@ -81,9 +100,15 @@ export function AuthProvider({ children }) {
     try {
       const result = await registerRequest(cleanUser, cleanPass, cleanEmail)
       sessionStorage.setItem(AUTH_TOKEN_KEY, result.token)
-      setUser({ username: result.user.username, email: result.user.email })
+      setUser({
+        username: result.user.username,
+        email: result.user.email,
+        university: result.user.university || '',
+        role: 'user',
+        isVerified: false,
+      })
       setIsAuthenticated(true)
-      return { ok: true }
+      return { ok: true, user: result.user }
     } catch (error) {
       return {
         ok: false,
@@ -95,7 +120,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     sessionStorage.removeItem(AUTH_TOKEN_KEY)
     setIsAuthenticated(false)
-    setUser(null)
+    setUser(DEFAULT_USER)
   }
 
   const updateCredentials = async (newUsername, newPassword) => {
@@ -115,6 +140,8 @@ export function AuthProvider({ children }) {
         ...prev,
         username: result.user?.username || cleanUser,
         university: result.user?.university !== undefined ? result.user.university : prev?.university,
+        role: result.user?.role || prev?.role || 'user',
+        isVerified: result.user?.isVerified !== undefined ? result.user.isVerified : prev?.isVerified,
       }))
       return { ok: true }
     } catch (error) {

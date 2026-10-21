@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
   Trophy, GraduationCap, Sparkles, Copy, Check,
-  User, Sliders, LogOut, X, ArrowUpRight
+  User, Sliders, LogOut, X, ArrowUpRight, ShieldAlert
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useUserHandles } from '../context/UserContext'
@@ -171,6 +171,17 @@ export default function ProfileDropdown({ isOpen, onClose }) {
 
           {/* Quick Links */}
           <div className="pt-2 border-t border-hairline flex items-center justify-between text-xs">
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => handleNavigate('/admin')}
+                className="flex items-center gap-1.5 text-signal hover:opacity-80 py-1 transition-opacity cursor-pointer font-semibold"
+                title="Admin Management Console"
+              >
+                <ShieldAlert size={12} />
+                <span>Admin</span>
+              </button>
+            )}
+
             <button
               onClick={() => handleNavigate('/setup')}
               className="flex items-center gap-1.5 text-chrome-dim hover:text-chrome py-1 transition-colors cursor-pointer"

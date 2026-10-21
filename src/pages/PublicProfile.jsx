@@ -146,9 +146,16 @@ export default function PublicProfile() {
                 <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-chrome">
                   @{profile.username}
                 </h1>
-                <span className="badge-base badge-signal font-semibold uppercase tracking-wider text-[11px]">
-                  VERIFIED CANDIDATE
-                </span>
+                {profile.isVerified ? (
+                  <span className="badge-base badge-signal font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1">
+                    <Check size={12} className="text-signal" />
+                    VERIFIED DEVELOPER
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-steel text-chrome-dim border border-hairline">
+                    COMMUNITY MEMBER
+                  </span>
+                )}
               </div>
 
               {profile.university ? (

@@ -129,7 +129,56 @@ export async function fetchCommunityStats() {
   return data
 }
 
+// ==========================================
+// ADMIN API SERVICES
+// ==========================================
+export async function fetchAdminStats() {
+  const { data } = await api.get('/admin/stats')
+  return data
+}
+
+export async function fetchAdminUsers(search = '') {
+  const { data } = await api.get('/admin/users', {
+    params: search ? { search } : {},
+  })
+  return data
+}
+
+export async function createAdminUser(userData) {
+  const { data } = await api.post('/admin/users', userData)
+  return data
+}
+
+export async function updateAdminUser(id, userData) {
+  const { data } = await api.put(`/admin/users/${id}`, userData)
+  return data
+}
+
+export async function toggleUserVerification(id) {
+  const { data } = await api.patch(`/admin/users/${id}/verify`)
+  return data
+}
+
+export async function toggleUserSuspension(id) {
+  const { data } = await api.patch(`/admin/users/${id}/suspend`)
+  return data
+}
+
+export async function deleteAdminUser(id) {
+  const { data } = await api.delete(`/admin/users/${id}`)
+  return data
+}
+
+export async function fetchAdminContent(type = 'projects') {
+  const { data } = await api.get('/admin/content', {
+    params: { type },
+  })
+  return data
+}
+
+export async function deleteAdminContent(type, id) {
+  const { data } = await api.delete(`/admin/content/${type}/${id}`)
+  return data
+}
+
 export default api
-
-
-
